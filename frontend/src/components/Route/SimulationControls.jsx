@@ -11,6 +11,8 @@ export default function SimulationControls() {
     toast,
     loading,
     setLoading,
+    isSimulating,
+    startSimulation,
   } = useApp()
 
   const id = activeRoute?.route_id
@@ -60,6 +62,13 @@ export default function SimulationControls() {
         onClick={() => run(api.completeRoute, 'simDone')}
       >
         Complete
+      </Button>
+      <Button
+        className="w-full mt-2"
+        disabled={isSimulating}
+        onClick={startSimulation}
+      >
+        {isSimulating ? 'Rider Moving...' : 'Simulate Rider Movement'}
       </Button>
     </div>
   )

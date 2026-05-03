@@ -18,6 +18,7 @@ class UpdateVehicleRequest extends FormRequest
             'capacity' => ['sometimes', 'integer', 'min:1', 'max:1000'],
             'average_speed' => ['sometimes', 'numeric', 'min:1', 'max:200'],
             'is_available' => ['sometimes', 'boolean'],
+            'delivery_center_id' => ['sometimes', 'string'],
         ];
     }
 }

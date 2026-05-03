@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import LogisticsMap from '../components/Map/LogisticsMap'
+import MapView from '../components/Map/MapView'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
 import Spinner from '../components/UI/Spinner'
@@ -39,7 +39,7 @@ export default function Dashboard() {
             <p className="text-sm text-zinc-500">Loading map data…</p>
           </div>
         ) : (
-          <LogisticsMap
+          <MapView
             centers={centers}
             orders={ordersOnMap}
             activeRoute={activeRoute}

@@ -4,6 +4,7 @@ import Button from '../UI/Button'
 import * as api from '../../services/api'
 import { PRIORITIES } from '../../utils/constants'
 import { geocodeAddress } from '../../services/geocoding'
+import AddressAutocomplete from './AddressAutocomplete'
 
 export default function AddOrderModal({ open, onClose, onCreated, toast }) {
   const [form, setForm] = useState({
@@ -86,24 +87,19 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
           <label className="mb-1 block text-xs font-semibold text-zinc-600 dark:text-zinc-400">
             Delivery Address
           </label>
-          <div className="flex gap-2">
-            <input
-              required
-              className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-              value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGeocode())}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              className="shrink-0"
-              onClick={handleGeocode}
-              disabled={geocoding || !form.address}
-            >
-              {geocoding ? '...' : 'Verify'}
-            </Button>
-          </div>
+          <AddressAutocomplete
+            value={form.address}
+            onChange={(val) => setForm((f) => ({ ...f, address: val }))}
+            onSelect={(place) => {
+              setForm((f) => ({
+                ...f,
+                address: place.address,
+                latitude: place.lat,
+                longitude: place.lng,
+              }))
+              toast('Location selected')
+            }}
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -111,12 +107,10 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
               Latitude
             </label>
             <input
-              required
-              type="number"
-              step="any"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              readOnly
+              className="w-full rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 outline-none dark:border-zinc-800 dark:bg-zinc-900/50"
               value={form.latitude}
-              onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))}
+              placeholder="Auto-filled"
             />
           </div>
           <div>
@@ -124,12 +118,10 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
               Longitude
             </label>
             <input
-              required
-              type="number"
-              step="any"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              readOnly
+              className="w-full rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 outline-none dark:border-zinc-800 dark:bg-zinc-900/50"
               value={form.longitude}
-              onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
+              placeholder="Auto-filled"
             />
           </div>
         </div>

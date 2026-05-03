@@ -17,7 +17,7 @@ class EloquentRouteRepository implements RouteRepositoryInterface
             ->get();
     }
 
-    public function findWithRelations(int $id): ?DeliveryRoute
+    public function findWithRelations(mixed $id): ?DeliveryRoute
     {
         return DeliveryRoute::query()
             ->with(['deliveryCenter', 'vehicle', 'routeStops.order'])
@@ -41,7 +41,7 @@ class EloquentRouteRepository implements RouteRepositoryInterface
         $route->routeStops()->delete();
     }
 
-    public function plannedRoutesForCenter(int $deliveryCenterId): Collection
+    public function plannedRoutesForCenter(mixed $deliveryCenterId): Collection
     {
         return DeliveryRoute::query()
             ->where('delivery_center_id', $deliveryCenterId)

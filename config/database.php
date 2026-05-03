@@ -41,14 +41,8 @@ return [
 
         'mongodb' => [
             'driver' => 'mongodb',
-            'host' => env('MONGODB_HOST', '127.0.0.1'),
-            'port' => env('MONGODB_PORT', 27017),
+            'dsn' => env('MONGODB_URI', 'mongodb://127.0.0.1:27017'),
             'database' => env('MONGODB_DATABASE', 'logiroute'),
-            'username' => env('MONGODB_USERNAME', ''),
-            'password' => env('MONGODB_PASSWORD', ''),
-            'options' => [
-                'database' => env('MONGODB_AUTH_DATABASE', 'admin'),
-            ],
         ],
 
         'mysql' => [

@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react'
 import * as api from '../services/api'
-import { computeVehiclePosition } from '../utils/routeMap'import { decodePolyline } from '../utils/polyline'
+import { computeVehiclePosition } from '../utils/routeMap'
 
 export const AppContext = createContext(null)
 
@@ -49,6 +49,8 @@ export function AppProvider({ children }) {
   const [bootstrapError, setBootstrapError] = useState(null)
   const [draftDeliveries, setDraftDeliveries] = useState([])
   const [osrmRoute, setOsrmRoute] = useState([])
+  const [isSimulating, setIsSimulating] = useState(false)
+  const [simProgress, setSimProgress] = useState(0)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -120,14 +122,15 @@ export function AppProvider({ children }) {
     ]
 
     const coordsStr = points.map(p => p.join(',')).join(';')
-    const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=polyline`
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`
 
     try {
       const response = await fetch(url)
       const data = await response.json()
       if (data.code === 'Ok' && data.routes?.[0]) {
-        const decoded = decodePolyline(data.routes[0].geometry)
-        setOsrmRoute(decoded)
+        // Convert OSRM [lng, lat] to Leaflet [lat, lng]
+        const points = data.routes[0].geometry.coordinates.map((p) => [p[1], p[0]])
+        setOsrmRoute(points)
       }
     } catch (err) {
       console.error('OSRM Error:', err)
@@ -205,9 +208,10 @@ export function AppProvider({ children }) {
     setActiveRouteBase(stripMeta(route))
   }, [])
 
-  const generateRoutesAction = useCallback(async () => {
+  const generateRoutesAction = useCallback(async (overrideCenterId = null) => {
+    const centerToUse = overrideCenterId || selectedCenterId
     const payload =
-      selectedCenterId != null ? { delivery_center_id: selectedCenterId } : {}
+      centerToUse != null ? { delivery_center_id: centerToUse } : {}
     setLoading((l) => ({ ...l, generate: true }))
     try {
       const data = await api.generateRoute(payload)
@@ -221,7 +225,13 @@ export function AppProvider({ children }) {
         activeProfile === 'shortest'
           ? comps[0].shortest_distance_route
           : comps[0].fastest_time_route
-      setActiveRouteBase(stripMeta(primary))
+      
+      const stripped = stripMeta(primary)
+      setActiveRouteBase(stripped)
+      
+      // Fetch real road geometry for the new route
+      void fetchOSRMPath(stripped)
+      
       await Promise.all([refreshOrders(), refreshRoutes()])
       toast('Routes generated and optimized.')
     } catch (e) {
@@ -249,6 +259,24 @@ export function AppProvider({ children }) {
   const removeDraftDelivery = useCallback((id) => {
     setDraftDeliveries((prev) => prev.filter((d) => d.id !== id))
   }, [])
+
+  const startSimulation = useCallback(() => {
+    if (!osrmRoute.length) return
+    setIsSimulating(true)
+    setSimProgress(0)
+    
+    let current = 0
+    const interval = setInterval(() => {
+      current += 1
+      if (current >= osrmRoute.length) {
+        clearInterval(interval)
+        setIsSimulating(false)
+        toast('Delivery simulation completed!')
+      } else {
+        setSimProgress(current)
+      }
+    }, 100) // Speed of simulation
+  }, [osrmRoute, toast])
 
   const clearDraftDeliveries = useCallback(() => {
     setDraftDeliveries([])
@@ -291,6 +319,9 @@ export function AppProvider({ children }) {
       removeDraftDelivery,
       clearDraftDeliveries,
       osrmRoute,
+      isSimulating,
+      simProgress,
+      startSimulation,
     }),
     [
       theme,
@@ -324,6 +355,9 @@ export function AppProvider({ children }) {
       removeDraftDelivery,
       clearDraftDeliveries,
       osrmRoute,
+      isSimulating,
+      simProgress,
+      startSimulation,
     ]
   )
 

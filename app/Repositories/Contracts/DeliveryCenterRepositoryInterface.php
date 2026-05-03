@@ -9,7 +9,7 @@ interface DeliveryCenterRepositoryInterface
 {
     public function all(): Collection;
 
-    public function find(int $id): ?DeliveryCenter;
+    public function find(mixed $id): ?DeliveryCenter;
 
     public function create(array $data): DeliveryCenter;
 }

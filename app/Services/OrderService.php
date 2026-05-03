@@ -74,17 +74,31 @@ class OrderService
 
         if ($centers->isEmpty()) {
             throw ValidationException::withMessages([
-                'latitude' => __('No delivery centers are configured.'),
+                'address' => __('No delivery centers available. Please create a center first.'),
             ]);
         }
 
-        return $centers->sortBy(function (DeliveryCenter $center) use ($latitude, $longitude) {
-            return DistanceHelper::kmBetween(
+        $nearby = $centers->map(function (DeliveryCenter $center) use ($latitude, $longitude) {
+            $dist = DistanceHelper::kmBetween(
                 $latitude,
                 $longitude,
                 (float) $center->latitude,
                 (float) $center->longitude
             );
-        })->first();
+            $center->temp_distance = $dist;
+
+            return $center;
+        })->filter(fn ($c) => $c->temp_distance <= 10.0);
+
+        if ($nearby->isEmpty()) {
+            $minDist = $centers->min('temp_distance');
+            throw ValidationException::withMessages([
+                'address' => __('Delivery address is too far (nearest center is :dist km away). We only deliver within 10 km.', [
+                    'dist' => round($minDist, 1),
+                ]),
+            ]);
+        }
+
+        return $nearby->sortBy('temp_distance')->first();
     }
 }

@@ -15,7 +15,7 @@ class GenerateRouteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'delivery_center_id' => ['nullable', 'integer', Rule::exists('delivery_centers', 'id')],
+            'delivery_center_id' => ['nullable', 'string'],
             'departure_at' => ['nullable', 'date'],
         ];
     }

@@ -26,7 +26,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
         return Order::query()->with('deliveryCenter')->orderByDesc('_id')->get();
     }
 
-    public function find(int $id): ?Order
+    public function find(mixed $id): ?Order
     {
         return Order::query()->find($id);
     }
@@ -43,7 +43,12 @@ class EloquentOrderRepository implements OrderRepositoryInterface
         return $order->fresh();
     }
 
-    public function pendingForCenter(int $deliveryCenterId): Collection
+    public function delete(Order $order): void
+    {
+        $order->delete();
+    }
+
+    public function pendingForCenter(mixed $deliveryCenterId): Collection
     {
         return Order::query()
             ->where('delivery_center_id', $deliveryCenterId)

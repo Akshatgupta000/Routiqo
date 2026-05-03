@@ -7,13 +7,13 @@ use Illuminate\Support\Collection;
 
 interface VehicleRepositoryInterface
 {
-    public function all(?int $deliveryCenterId = null): Collection;
+    public function all(mixed $deliveryCenterId = null): Collection;
 
-    public function forCenter(int $deliveryCenterId): Collection;
+    public function forCenter(mixed $deliveryCenterId): Collection;
 
-    public function availableForCenter(int $deliveryCenterId): Collection;
+    public function availableForCenter(mixed $deliveryCenterId): Collection;
 
-    public function find(int $id): ?Vehicle;
+    public function find(mixed $id): ?Vehicle;
 
     public function create(array $data): Vehicle;
 

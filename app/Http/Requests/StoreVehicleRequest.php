@@ -19,7 +19,7 @@ class StoreVehicleRequest extends FormRequest
             'capacity' => ['required', 'integer', 'min:1', 'max:1000'],
             'average_speed' => ['sometimes', 'numeric', 'min:1', 'max:200'],
             'is_available' => ['sometimes', 'boolean'],
-            'delivery_center_id' => ['required', 'integer', Rule::exists('delivery_centers', 'id')],
+            'delivery_center_id' => ['required', 'string'],
         ];
     }
 

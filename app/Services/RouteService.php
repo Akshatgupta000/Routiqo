@@ -39,7 +39,7 @@ class RouteService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function generateRoutes(?int $deliveryCenterId = null, ?Carbon $departureAt = null): array
+    public function generateRoutes(mixed $deliveryCenterId = null, ?Carbon $departureAt = null): array
     {
         $departureAt ??= now();
 
@@ -70,7 +70,7 @@ class RouteService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function regenerateRoutesForCenter(int $deliveryCenterId, ?Carbon $departureAt = null): array
+    public function regenerateRoutesForCenter(mixed $deliveryCenterId, ?Carbon $departureAt = null): array
     {
         $center = $this->centers->find($deliveryCenterId);
         if (! $center instanceof DeliveryCenter) {
@@ -96,7 +96,7 @@ class RouteService
         return $this->generateRoutes($deliveryCenterId, $departureAt);
     }
 
-    public function startRoute(int $routeId): DeliveryRoute
+    public function startRoute(mixed $routeId): DeliveryRoute
     {
         $route = $this->routes->findWithRelations($routeId);
         if (! $route instanceof DeliveryRoute) {
@@ -143,7 +143,7 @@ class RouteService
         return $this->routes->findWithRelations($routeId);
     }
 
-    public function advanceNextStop(int $routeId): DeliveryRoute
+    public function advanceNextStop(mixed $routeId): DeliveryRoute
     {
         $route = $this->routes->findWithRelations($routeId);
         if (! $route instanceof DeliveryRoute) {
@@ -194,7 +194,7 @@ class RouteService
         return $this->routes->findWithRelations($routeId);
     }
 
-    public function completeRoute(int $routeId): DeliveryRoute
+    public function completeRoute(mixed $routeId): DeliveryRoute
     {
         $route = $this->routes->findWithRelations($routeId);
         if (! $route instanceof DeliveryRoute) {
@@ -219,7 +219,7 @@ class RouteService
         return $this->routes->findWithRelations($routeId);
     }
 
-    public function findRouteForRead(int $routeId): ?DeliveryRoute
+    public function findRouteForRead(mixed $routeId): ?DeliveryRoute
     {
         $key = $this->routeCacheKey($routeId);
         $cached = Cache::get($key);
@@ -237,7 +237,7 @@ class RouteService
         return $route;
     }
 
-    public function forgetRouteCache(int $routeId): void
+    public function forgetRouteCache(mixed $routeId): void
     {
         Cache::forget($this->routeCacheKey($routeId));
     }
@@ -245,7 +245,7 @@ class RouteService
     /**
      * @return Collection<int, DeliveryCenter>
      */
-    private function resolveCenters(?int $deliveryCenterId): Collection
+    private function resolveCenters(mixed $deliveryCenterId): Collection
     {
         if ($deliveryCenterId !== null) {
             $center = $this->centers->find($deliveryCenterId);
@@ -460,7 +460,7 @@ class RouteService
         return $buckets;
     }
 
-    private function routeCacheKey(int $routeId): string
+    private function routeCacheKey(mixed $routeId): string
     {
         return 'delivery_route:'.$routeId;
     }

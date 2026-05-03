@@ -13,7 +13,7 @@ class EloquentDeliveryCenterRepository implements DeliveryCenterRepositoryInterf
         return DeliveryCenter::query()->orderBy('name')->get();
     }
 
-    public function find(int $id): ?DeliveryCenter
+    public function find(mixed $id): ?DeliveryCenter
     {
         return DeliveryCenter::query()->find($id);
     }

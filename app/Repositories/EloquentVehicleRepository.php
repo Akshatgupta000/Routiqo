@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 
 class EloquentVehicleRepository implements VehicleRepositoryInterface
 {
-    public function all(?int $deliveryCenterId = null): Collection
+    public function all(mixed $deliveryCenterId = null): Collection
     {
         $query = Vehicle::query()->with('deliveryCenter')->orderBy('id');
 
@@ -19,7 +19,7 @@ class EloquentVehicleRepository implements VehicleRepositoryInterface
         return $query->get();
     }
 
-    public function forCenter(int $deliveryCenterId): Collection
+    public function forCenter(mixed $deliveryCenterId): Collection
     {
         return Vehicle::query()
             ->where('delivery_center_id', $deliveryCenterId)
@@ -27,7 +27,7 @@ class EloquentVehicleRepository implements VehicleRepositoryInterface
             ->get();
     }
 
-    public function availableForCenter(int $deliveryCenterId): Collection
+    public function availableForCenter(mixed $deliveryCenterId): Collection
     {
         return Vehicle::query()
             ->where('delivery_center_id', $deliveryCenterId)
@@ -36,7 +36,7 @@ class EloquentVehicleRepository implements VehicleRepositoryInterface
             ->get();
     }
 
-    public function find(int $id): ?Vehicle
+    public function find(mixed $id): ?Vehicle
     {
         return Vehicle::query()->find($id);
     }

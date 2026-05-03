@@ -55,6 +55,11 @@ export async function updateOrder(id, payload) {
   return data
 }
 
+export async function deleteOrder(id) {
+  const { data } = await client.delete(`/orders/${id}`)
+  return data
+}
+
 export async function getVehicles(params = {}) {
   const { data } = await client.get('/vehicles', { params })
   return data

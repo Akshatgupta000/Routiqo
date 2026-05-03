@@ -9,7 +9,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
     capacity: 6,
     average_speed: 25,
     is_available: true,
-    delivery_center_id: centers[0]?.id ?? '',
+    delivery_center_id: centers[0]?.id || '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -22,7 +22,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
         capacity: Number(form.capacity),
         average_speed: Number(form.average_speed),
         is_available: form.is_available,
-        delivery_center_id: Number(form.delivery_center_id),
+        delivery_center_id: form.delivery_center_id,
       })
       toast('Vehicle created')
       onCreated?.()
@@ -32,7 +32,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
         capacity: 6,
         average_speed: 25,
         is_available: true,
-        delivery_center_id: centers[0]?.id ?? '',
+        delivery_center_id: centers[0]?.id || '',
       })
     } catch (err) {
       toast(err?.response?.data?.message || 'Could not create vehicle', 'error')
@@ -78,7 +78,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
             className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
             value={form.delivery_center_id}
             onChange={(e) =>
-              setForm((f) => ({ ...f, delivery_center_id: Number(e.target.value) }))
+              setForm((f) => ({ ...f, delivery_center_id: e.target.value }))
             }
           >
             {centers.map((c) => (

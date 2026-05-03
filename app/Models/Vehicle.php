@@ -15,6 +15,7 @@ class Vehicle extends Model
         'capacity',
         'average_speed',
         'is_available',
+        'current_load',
         'delivery_center_id',
     ];
 

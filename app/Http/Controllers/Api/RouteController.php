@@ -29,7 +29,7 @@ class RouteController extends Controller
         return response()->json(['routes' => $payload]);
     }
 
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, mixed $id): JsonResponse
     {
         $route = $this->routeService->findRouteForRead($id);
 
@@ -49,7 +49,7 @@ class RouteController extends Controller
         $centerId = $request->validated('delivery_center_id');
 
         $comparisons = $this->routeService->generateRoutes(
-            $centerId !== null ? (int) $centerId : null,
+            $centerId,
             $departure
         );
 
@@ -66,7 +66,7 @@ class RouteController extends Controller
         return response()->json(['comparisons' => $payload], 201);
     }
 
-    public function regenerate(Request $request, int $center_id): JsonResponse
+    public function regenerate(Request $request, mixed $center_id): JsonResponse
     {
         $comparisons = $this->routeService->regenerateRoutesForCenter($center_id);
 
@@ -83,7 +83,7 @@ class RouteController extends Controller
         return response()->json(['comparisons' => $payload]);
     }
 
-    public function start(Request $request, int $id): JsonResponse
+    public function start(Request $request, mixed $id): JsonResponse
     {
         $route = $this->routeService->startRoute($id);
 
@@ -92,7 +92,7 @@ class RouteController extends Controller
         );
     }
 
-    public function nextStop(Request $request, int $id): JsonResponse
+    public function nextStop(Request $request, mixed $id): JsonResponse
     {
         $route = $this->routeService->advanceNextStop($id);
 
@@ -101,7 +101,7 @@ class RouteController extends Controller
         );
     }
 
-    public function complete(Request $request, int $id): JsonResponse
+    public function complete(Request $request, mixed $id): JsonResponse
     {
         $route = $this->routeService->completeRoute($id);
 

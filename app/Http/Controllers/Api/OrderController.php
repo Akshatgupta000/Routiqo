@@ -47,7 +47,7 @@ class OrderController extends Controller
         return new OrderResource($order);
     }
 
-    public function update(UpdateOrderRequest $request, int $id): OrderResource
+    public function update(UpdateOrderRequest $request, mixed $id): OrderResource
     {
         $order = $this->orders->find($id);
 
@@ -57,5 +57,16 @@ class OrderController extends Controller
         $order->load('deliveryCenter');
 
         return new OrderResource($order);
+    }
+
+    public function destroy(mixed $id): \Illuminate\Http\JsonResponse
+    {
+        $order = $this->orders->find($id);
+
+        if ($order) {
+            $this->orders->delete($order);
+        }
+
+        return response()->json(null, 204);
     }
 }

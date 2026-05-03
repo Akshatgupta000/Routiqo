@@ -9,7 +9,7 @@ interface RouteRepositoryInterface
 {
     public function all(): Collection;
 
-    public function findWithRelations(int $id): ?DeliveryRoute;
+    public function findWithRelations(mixed $id): ?DeliveryRoute;
 
     public function create(array $data): DeliveryRoute;
 
@@ -20,7 +20,7 @@ interface RouteRepositoryInterface
     /**
      * @return Collection<int, DeliveryRoute>
      */
-    public function plannedRoutesForCenter(int $deliveryCenterId): Collection;
+    public function plannedRoutesForCenter(mixed $deliveryCenterId): Collection;
 
     public function deleteRoute(DeliveryRoute $route): void;
 }
