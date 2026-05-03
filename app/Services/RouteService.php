@@ -19,6 +19,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Carbon;
@@ -59,12 +60,51 @@ class RouteService
         Log::info('route.generate.complete', ['comparisons' => count($comparisons)]);
 
         if ($comparisons === []) {
-            throw ValidationException::withMessages([
-                'delivery_center_id' => __('No pending orders are available for route generation.'),
-            ]);
+            Log::info('route.generate.skip', ['reason' => 'no_comparisons_generated']);
+            return [];
         }
 
         return $comparisons;
+    }
+
+    public function generateRouteForVehicle(mixed $vehicleId, ?Carbon $departureAt = null): array
+    {
+        $departureAt ??= now();
+        $vehicle = $this->vehicles->find($vehicleId);
+        
+        if (!$vehicle) {
+            throw ValidationException::withMessages(['vehicle_id' => __('Vehicle not found.')]);
+        }
+
+        $center = $vehicle->deliveryCenter;
+        $orders = \App\Models\Order::query()
+            ->where('vehicle_id', $vehicleId)
+            ->where('status', \App\Enums\OrderStatus::Assigned->value)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            throw ValidationException::withMessages(['vehicle_id' => __('No assigned orders for this vehicle.')]);
+        }
+
+        $optimizer = new \App\Helpers\RouteOptimizer((float) $center->latitude, (float) $center->longitude);
+        $tour = $optimizer->buildShortestDistanceTour($orders);
+        
+        $batchId = (string) \Illuminate\Support\Str::uuid();
+        $route = $this->persistOptimizedRoute(
+            $center,
+            $vehicle,
+            $tour,
+            $departureAt,
+            \App\Enums\OptimizationProfile::ShortestDistance,
+            $batchId
+        );
+
+        return [
+            'comparison_batch_id' => $batchId,
+            'delivery_center_id' => $center->id,
+            'vehicle_id' => $vehicle->id,
+            'route' => (new \App\Http\Resources\RouteOptimizationResource($route))->toArray(request()),
+        ];
     }
 
     /**
@@ -373,6 +413,9 @@ class RouteService
             self::SERVICE_SECONDS_PER_STOP,
         );
 
+        // Fetch OSRM geometry
+        $geometry = $this->fetchGeometry($center, $orderedStops);
+
         $route = $this->routes->create([
             'delivery_center_id' => $center->id,
             'vehicle_id' => $vehicle->id,
@@ -383,6 +426,7 @@ class RouteService
             'status' => RouteStatus::Planned,
             'next_stop_sequence' => null,
             'departure_at' => $departureAt,
+            'geometry' => $geometry,
         ]);
 
         foreach ($orderedStops as $index => $order) {
@@ -463,5 +507,37 @@ class RouteService
     private function routeCacheKey(mixed $routeId): string
     {
         return 'delivery_route:'.$routeId;
+    }
+
+    private function fetchGeometry(DeliveryCenter $center, array $stops): array
+    {
+        if (empty($stops)) {
+            return [];
+        }
+
+        $points = collect([[ (float) $center->longitude, (float) $center->latitude ]])
+            ->concat(collect($stops)->map(fn($s) => [ (float) $s->longitude, (float) $s->latitude ]))
+            ->push([ (float) $center->longitude, (float) $center->latitude ])
+            ->map(fn($p) => implode(',', $p))
+            ->implode(';');
+
+        try {
+            $response = Http::get("https://router.project-osrm.org/route/v1/driving/{$points}", [
+                'overview' => 'full',
+                'geometries' => 'geojson',
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (($data['code'] ?? '') === 'Ok' && !empty($data['routes'][0]['geometry']['coordinates'])) {
+                    // Convert [lng, lat] to [lat, lng] for Leaflet
+                    return array_map(fn($p) => [$p[1], $p[0]], $data['routes'][0]['geometry']['coordinates']);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('route.osrm.failed', ['error' => $e->getMessage()]);
+        }
+
+        return [];
     }
 }

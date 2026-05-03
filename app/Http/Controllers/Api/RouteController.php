@@ -66,6 +66,17 @@ class RouteController extends Controller
         return response()->json(['comparisons' => $payload], 201);
     }
 
+    public function generateForVehicle(Request $request, mixed $vehicleId): JsonResponse
+    {
+        $departure = $request->filled('departure_at')
+            ? Carbon::parse($request->input('departure_at'))
+            : null;
+
+        $result = $this->routeService->generateRouteForVehicle($vehicleId, $departure);
+
+        return response()->json($result, 201);
+    }
+
     public function regenerate(Request $request, mixed $center_id): JsonResponse
     {
         $comparisons = $this->routeService->regenerateRoutesForCenter($center_id);

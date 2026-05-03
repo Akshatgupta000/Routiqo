@@ -60,6 +60,11 @@ export async function deleteOrder(id) {
   return data
 }
 
+export async function assignOrder(id) {
+  const { data } = await client.post(`/orders/${id}/assign`)
+  return data
+}
+
 export async function getVehicles(params = {}) {
   const { data } = await client.get('/vehicles', { params })
   return data

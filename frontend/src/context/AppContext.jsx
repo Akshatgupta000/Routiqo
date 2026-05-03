@@ -43,12 +43,12 @@ export function AppProvider({ children }) {
   const [activeRouteBase, setActiveRouteBase] = useState(null)
   const [activeProfile, setActiveProfile] = useState('shortest')
   const [selectedCenterId, setSelectedCenterId] = useState(null)
+  const [activeOrderId, setActiveOrderId] = useState(null)
   const [loading, setLoading] = useState({ global: false })
   const [mapFocus, setMapFocus] = useState(null)
   const [toasts, setToasts] = useState([])
   const [bootstrapError, setBootstrapError] = useState(null)
   const [draftDeliveries, setDraftDeliveries] = useState([])
-  const [osrmRoute, setOsrmRoute] = useState([])
   const [isSimulating, setIsSimulating] = useState(false)
   const [simProgress, setSimProgress] = useState(0)
 
@@ -63,7 +63,16 @@ export function AppProvider({ children }) {
 
   const toast = useCallback((message, type = 'success') => {
     const id = ++toastId
-    setToasts((t) => [...t, { id, message, type }])
+    let safeMessage = String(message)
+    if (typeof message === 'object' && message !== null) {
+      try {
+        safeMessage = message.message || JSON.stringify(message)
+      } catch {
+        safeMessage = '[Complex Error Object]'
+      }
+    }
+      
+    setToasts((t) => [...t, { id, message: safeMessage, type }])
     setTimeout(() => {
       setToasts((t) => t.filter((x) => x.id !== id))
     }, 4500)
@@ -110,32 +119,7 @@ export function AppProvider({ children }) {
   }, [refreshCenters, toast])
 
   const fetchOSRMPath = useCallback(async (route) => {
-    if (!route?.delivery_center || !route?.stops?.length) {
-      setOsrmRoute([])
-      return
-    }
-
-    const points = [
-      [route.delivery_center.longitude, route.delivery_center.latitude],
-      ...route.stops.map(s => [s.longitude, s.latitude]),
-      [route.delivery_center.longitude, route.delivery_center.latitude] // Close loop
-    ]
-
-    const coordsStr = points.map(p => p.join(',')).join(';')
-    const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`
-
-    try {
-      const response = await fetch(url)
-      const data = await response.json()
-      if (data.code === 'Ok' && data.routes?.[0]) {
-        // Convert OSRM [lng, lat] to Leaflet [lat, lng]
-        const points = data.routes[0].geometry.coordinates.map((p) => [p[1], p[0]])
-        setOsrmRoute(points)
-      }
-    } catch (err) {
-      console.error('OSRM Error:', err)
-      setOsrmRoute([])
-    }
+    // Legacy single-route fetch removed in favor of backend geometry persistence.
   }, [])
 
   const refreshOrders = useCallback(async (filters = {}) => {
@@ -155,8 +139,14 @@ export function AppProvider({ children }) {
   const refreshRoutes = useCallback(async () => {
     const data = await api.getRoutes()
     const list = data?.routes ?? data?.data ?? []
-    setRoutesList(Array.isArray(list) ? list : [])
-    return list
+    
+    // Deduplicate by route_id
+    const uniqueList = Array.isArray(list) 
+      ? Array.from(new Map(list.map(item => [item.route_id, item])).values())
+      : []
+
+    setRoutesList(uniqueList)
+    return uniqueList
   }, [])
 
   const bootstrap = useCallback(async () => {
@@ -208,6 +198,13 @@ export function AppProvider({ children }) {
     setActiveRouteBase(stripMeta(route))
   }, [])
 
+  const resetSelection = useCallback(() => {
+    setSelectedCenterId(null)
+    setActiveRouteBase(null)
+    setActiveOrderId(null)
+    setMapFocus(null)
+  }, [])
+
   const generateRoutesAction = useCallback(async (overrideCenterId = null) => {
     const centerToUse = overrideCenterId || selectedCenterId
     const payload =
@@ -229,9 +226,6 @@ export function AppProvider({ children }) {
       const stripped = stripMeta(primary)
       setActiveRouteBase(stripped)
       
-      // Fetch real road geometry for the new route
-      void fetchOSRMPath(stripped)
-      
       await Promise.all([refreshOrders(), refreshRoutes()])
       toast('Routes generated and optimized.')
     } catch (e) {
@@ -244,13 +238,13 @@ export function AppProvider({ children }) {
     } finally {
       setLoading((l) => ({ ...l, generate: false }))
     }
-  }, [selectedCenterId, activeProfile, refreshOrders, refreshRoutes, toast])
+  }, [selectedCenterId, activeProfile, refreshOrders, refreshRoutes, toast, resetSelection])
 
   const selectRouteFromList = useCallback((route) => {
     const stripped = stripMeta(route)
     setActiveRouteBase(stripped)
-    fetchOSRMPath(stripped)
-  }, [fetchOSRMPath])
+  }, [])
+
 
   const addDraftDelivery = useCallback((delivery) => {
     setDraftDeliveries((prev) => [...prev, { ...delivery, id: Date.now() }])
@@ -261,14 +255,15 @@ export function AppProvider({ children }) {
   }, [])
 
   const startSimulation = useCallback(() => {
-    if (!osrmRoute.length) return
+    const currentOSRM = activeRoute?.geometry || []
+    if (!currentOSRM.length) return
     setIsSimulating(true)
     setSimProgress(0)
     
     let current = 0
     const interval = setInterval(() => {
       current += 1
-      if (current >= osrmRoute.length) {
+      if (current >= currentOSRM.length) {
         clearInterval(interval)
         setIsSimulating(false)
         toast('Delivery simulation completed!')
@@ -276,7 +271,7 @@ export function AppProvider({ children }) {
         setSimProgress(current)
       }
     }, 100) // Speed of simulation
-  }, [osrmRoute, toast])
+  }, [activeRoute, toast, resetSelection])
 
   const clearDraftDeliveries = useCallback(() => {
     setDraftDeliveries([])
@@ -299,6 +294,8 @@ export function AppProvider({ children }) {
       setActiveProfile,
       selectedCenterId,
       setSelectedCenterId,
+      activeOrderId,
+      setActiveOrderId,
       loading,
       toasts,
       dismissToast,
@@ -318,10 +315,10 @@ export function AppProvider({ children }) {
       addDraftDelivery,
       removeDraftDelivery,
       clearDraftDeliveries,
-      osrmRoute,
       isSimulating,
       simProgress,
       startSimulation,
+      resetSelection,
     }),
     [
       theme,
@@ -335,6 +332,7 @@ export function AppProvider({ children }) {
       setActiveRoute,
       activeProfile,
       selectedCenterId,
+      activeOrderId,
       loading,
       toasts,
       dismissToast,
@@ -354,10 +352,10 @@ export function AppProvider({ children }) {
       addDraftDelivery,
       removeDraftDelivery,
       clearDraftDeliveries,
-      osrmRoute,
       isSimulating,
       simProgress,
       startSimulation,
+      resetSelection,
     ]
   )
 

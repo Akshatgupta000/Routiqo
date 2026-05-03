@@ -4,7 +4,7 @@ import Button from '../UI/Button'
 import * as api from '../../services/api'
 import { PRIORITIES } from '../../utils/constants'
 import { geocodeAddress } from '../../services/geocoding'
-import AddressAutocomplete from './AddressAutocomplete'
+import AddressAutocomplete from '../UI/AddressAutocomplete'
 
 export default function AddOrderModal({ open, onClose, onCreated, toast }) {
   const [form, setForm] = useState({

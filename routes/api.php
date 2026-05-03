@@ -12,6 +12,8 @@ Route::get('/centers', [DeliveryCenterController::class, 'index']);
 Route::post('/orders', [OrderController::class, 'store']);
 Route::get('/orders', [OrderController::class, 'index']);
 Route::patch('/orders/{id}', [OrderController::class, 'update']);
+Route::post('/orders/{id}/assign', [OrderController::class, 'assign']);
+Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 
 Route::post('/vehicles', [VehicleController::class, 'store']);
 Route::get('/vehicles', [VehicleController::class, 'index']);

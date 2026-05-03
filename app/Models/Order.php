@@ -17,6 +17,7 @@ class Order extends Model
         'latitude',
         'longitude',
         'delivery_center_id',
+        'vehicle_id',
         'status',
         'priority',
     ];
@@ -39,6 +40,11 @@ class Order extends Model
     public function routeStop(): HasOne
     {
         return $this->hasOne(RouteStop::class);
+    }
+
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     public function scopePending($query)

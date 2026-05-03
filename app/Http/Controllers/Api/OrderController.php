@@ -59,6 +59,17 @@ class OrderController extends Controller
         return new OrderResource($order);
     }
 
+    public function assign(mixed $id): OrderResource
+    {
+        $order = $this->orders->find($id);
+        abort_if(!$order, 404);
+
+        $order = $this->orderService->assignOrder($order);
+        $order->load(['deliveryCenter', 'vehicle']);
+
+        return new OrderResource($order);
+    }
+
     public function destroy(mixed $id): \Illuminate\Http\JsonResponse
     {
         $order = $this->orders->find($id);

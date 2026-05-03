@@ -23,7 +23,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
 
     public function all(): Collection
     {
-        return Order::query()->with('deliveryCenter')->orderByDesc('_id')->get();
+        return Order::query()->with(['deliveryCenter', 'vehicle'])->orderByDesc('_id')->get();
     }
 
     public function find(mixed $id): ?Order
@@ -52,7 +52,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
     {
         return Order::query()
             ->where('delivery_center_id', $deliveryCenterId)
-            ->where('status', OrderStatus::Pending)
+            ->whereIn('status', [OrderStatus::Pending, OrderStatus::Assigned])
             ->orderBy('priority')
             ->orderBy('_id')
             ->get();

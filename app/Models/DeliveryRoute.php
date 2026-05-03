@@ -22,6 +22,7 @@ class DeliveryRoute extends Model
         'status',
         'next_stop_sequence',
         'departure_at',
+        'geometry',
     ];
 
     protected function casts(): array
@@ -33,6 +34,7 @@ class DeliveryRoute extends Model
             'optimization_profile' => OptimizationProfile::class,
             'departure_at' => 'datetime',
             'next_stop_sequence' => 'integer',
+            'geometry' => 'array',
         ];
     }
 

@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Modal from '../UI/Modal'
 import Button from '../UI/Button'
 import * as api from '../../services/api'
 
-export default function AddVehicleModal({ open, onClose, onCreated, centers, toast }) {
+export default function AddVehicleModal({ open, onClose, onCreated, centers, toast, initialCenterId }) {
   const [form, setForm] = useState({
     name: '',
     capacity: 6,
     average_speed: 25,
     is_available: true,
-    delivery_center_id: centers[0]?.id || '',
+    delivery_center_id: initialCenterId || centers[0]?.id || '',
   })
+
+  useEffect(() => {
+    if (initialCenterId) {
+      setForm(f => ({ ...f, delivery_center_id: initialCenterId }))
+    }
+  }, [initialCenterId])
+
   const [saving, setSaving] = useState(false)
 
   const submit = async (e) => {

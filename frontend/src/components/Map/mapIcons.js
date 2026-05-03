@@ -11,10 +11,15 @@ export function centerIcon() {
 
 export function orderIcon(color = '#ef4444') {
   return L.divIcon({
-    className: 'custom-marker-order',
-    html: `<div class="h-3 w-3 rounded-full border-2 border-white shadow-md" style="background:${color}"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    className: 'custom-marker-order-container',
+    html: `
+      <div class="order-pin-wrapper">
+        <div class="order-pulse" style="background: ${color}4d"></div>
+        <div class="order-pin" style="background: ${color}"></div>
+      </div>
+    `,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
   })
 }
 

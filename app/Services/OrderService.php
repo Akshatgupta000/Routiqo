@@ -30,13 +30,8 @@ class OrderService
             $coords = $this->geocoding->geocode($address);
             $lat = $coords['lat'];
             $lng = $coords['lng'];
-            $address = $coords['display_name']; // Optional: use the verified address
+            $address = $coords['display_name'];
         }
-
-        $center = $this->resolveNearestCenter(
-            (float) $lat,
-            (float) $lng
-        );
 
         $priority = isset($payload['priority'])
             ? OrderPriority::from($payload['priority'])
@@ -46,12 +41,58 @@ class OrderService
             'address' => $address,
             'latitude' => $lat,
             'longitude' => $lng,
-            'delivery_center_id' => $center->id,
             'status' => OrderStatus::Pending,
             'priority' => $priority,
         ];
 
         return $this->orders->create($data);
+    }
+
+    public function assignOrder(Order $order): Order
+    {
+        if ($order->status !== OrderStatus::Pending) {
+            throw ValidationException::withMessages([
+                'status' => __('Order is already assigned or processed.'),
+            ]);
+        }
+
+        $center = $this->resolveNearestCenter(
+            (float) $order->latitude,
+            (float) $order->longitude
+        );
+
+        // Find available vehicle with lowest load
+        $vehicle = \App\Models\Vehicle::query()
+            ->where('delivery_center_id', $center->id)
+            ->where('is_available', true)
+            ->orderBy('current_load', 'asc')
+            ->first();
+
+        if (!$vehicle) {
+             throw ValidationException::withMessages([
+                'vehicle_id' => [
+                    'code' => 'no_vehicle',
+                    'message' => __('No available vehicles at the nearest delivery center (:center).', ['center' => $center->name]),
+                    'suggestion' => 'create_vehicle',
+                    'center_id' => $center->id
+                ],
+            ]);
+        }
+
+        // Update order
+        $order = $this->orders->update($order, [
+            'delivery_center_id' => $center->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => OrderStatus::Assigned,
+        ]);
+
+        // Update vehicle: set to busy
+        $vehicle->update([
+            'is_available' => false,
+            'current_load' => 1
+        ]);
+
+        return $order;
     }
 
     public function updateOrderStatus(Order $order, string $status): Order
@@ -64,7 +105,20 @@ class OrderService
             ]);
         }
 
-        return $this->orders->update($order, ['status' => $next]);
+        $order = $this->orders->update($order, ['status' => $next]);
+
+        // If delivered, release the vehicle
+        if ($next === OrderStatus::Delivered && $order->vehicle_id) {
+            $vehicle = \App\Models\Vehicle::find($order->vehicle_id);
+            if ($vehicle) {
+                $vehicle->update([
+                    'is_available' => true,
+                    'current_load' => 0
+                ]);
+            }
+        }
+
+        return $order;
     }
 
     private function resolveNearestCenter(float $latitude, float $longitude): DeliveryCenter
@@ -74,12 +128,18 @@ class OrderService
 
         if ($centers->isEmpty()) {
             throw ValidationException::withMessages([
-                'address' => __('No delivery centers available. Please create a center first.'),
+                'address' => [
+                    'code' => 'no_center',
+                    'message' => __('No delivery centers available.'),
+                    'suggestion' => 'create_center',
+                    'lat' => $latitude,
+                    'lng' => $longitude
+                ],
             ]);
         }
 
         $nearby = $centers->map(function (DeliveryCenter $center) use ($latitude, $longitude) {
-            $dist = DistanceHelper::kmBetween(
+            $dist = DistanceService::calculate(
                 $latitude,
                 $longitude,
                 (float) $center->latitude,
@@ -93,9 +153,13 @@ class OrderService
         if ($nearby->isEmpty()) {
             $minDist = $centers->min('temp_distance');
             throw ValidationException::withMessages([
-                'address' => __('Delivery address is too far (nearest center is :dist km away). We only deliver within 10 km.', [
-                    'dist' => round($minDist, 1),
-                ]),
+                'address' => [
+                    'code' => 'no_center',
+                    'message' => __('Delivery address is too far (nearest center is :dist km away).', ['dist' => round($minDist, 1)]),
+                    'suggestion' => 'create_center',
+                    'lat' => $latitude,
+                    'lng' => $longitude
+                ],
             ]);
         }
 

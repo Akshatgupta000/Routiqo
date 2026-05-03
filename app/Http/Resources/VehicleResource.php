@@ -13,11 +13,12 @@ class VehicleResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'capacity' => (int) $this->capacity,
-            'average_speed' => (float) $this->average_speed,
+            'vehicle_number' => $this->vehicle_number ?? null,
+            'capacity' => $this->capacity,
+            'current_load' => $this->current_load ?? 0,
             'is_available' => (bool) $this->is_available,
+            'average_speed' => (float) $this->average_speed,
             'delivery_center_id' => $this->delivery_center_id,
-            'delivery_center' => DeliveryCenterResource::make($this->whenLoaded('deliveryCenter')),
         ];
     }
 }

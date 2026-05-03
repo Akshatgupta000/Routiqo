@@ -24,9 +24,16 @@ export default function Dashboard() {
 
   const ordersOnMap = useMemo(
     () =>
-      orders.filter(
-        (o) => !selectedCenterId || o.delivery_center_id === selectedCenterId
-      ),
+      orders.filter((o) => {
+        // Always show pending orders (red dots)
+        if (o.status === 'pending') return true
+        
+        // Don't show completed orders if user wants them gone
+        if (o.status === 'delivered') return false
+
+        // Show orders belonging to the selected center
+        return !selectedCenterId || o.delivery_center_id === selectedCenterId
+      }),
     [orders, selectedCenterId]
   )
 
@@ -44,7 +51,7 @@ export default function Dashboard() {
             orders={ordersOnMap}
             activeRoute={activeRoute}
             vehiclePosition={vehiclePosition}
-            showOrderPins={!activeRoute}
+            showOrderPins={true}
           />
         )}
       </section>

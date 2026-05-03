@@ -12,6 +12,7 @@ class Vehicle extends Model
     use HasFactory;
     protected $fillable = [
         'name',
+        'vehicle_number',
         'capacity',
         'average_speed',
         'is_available',

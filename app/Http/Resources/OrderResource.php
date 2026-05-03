@@ -16,9 +16,11 @@ class OrderResource extends JsonResource
             'latitude' => (float) $this->latitude,
             'longitude' => (float) $this->longitude,
             'delivery_center_id' => $this->delivery_center_id,
+            'vehicle_id' => $this->vehicle_id,
             'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
             'priority' => $this->priority instanceof \BackedEnum ? $this->priority->value : $this->priority,
             'delivery_center' => DeliveryCenterResource::make($this->whenLoaded('deliveryCenter')),
+            'vehicle' => VehicleResource::make($this->whenLoaded('vehicle')),
         ];
     }
 }

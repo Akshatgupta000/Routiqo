@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Modal from '../UI/Modal'
 import Button from '../UI/Button'
 import { geocodeAddress } from '../../services/geocoding'
 import { useApp } from '../../context/AppContext'
+import AddressAutocomplete from '../UI/AddressAutocomplete'
 
-export default function AddCenterModal({ open, onClose }) {
+export default function AddCenterModal({ open, onClose, initialData }) {
   const { addCenterAction, toast } = useApp()
   const [form, setForm] = useState({
     name: '',
@@ -12,6 +13,17 @@ export default function AddCenterModal({ open, onClose }) {
     latitude: '',
     longitude: '',
   })
+
+  useEffect(() => {
+    if (initialData) {
+      setForm((f) => ({
+        ...f,
+        latitude: initialData.lat?.toString() || '',
+        longitude: initialData.lng?.toString() || '',
+        address: initialData.address || '',
+      }))
+    }
+  }, [initialData])
   const [geocoding, setGeocoding] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -94,24 +106,20 @@ export default function AddCenterModal({ open, onClose }) {
           <label className="mb-1 block text-xs font-semibold text-zinc-600 dark:text-zinc-400">
             Search Address
           </label>
-          <div className="flex gap-2">
-            <input
-              className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-              placeholder="Enter city, street, or pincode"
-              value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGeocode())}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              className="shrink-0 whitespace-nowrap"
-              onClick={handleGeocode}
-              disabled={geocoding || !form.address}
-            >
-              {geocoding ? '...' : 'Search'}
-            </Button>
-          </div>
+          <AddressAutocomplete
+            placeholder="Search hub location..."
+            value={form.address}
+            onChange={(val) => setForm((f) => ({ ...f, address: val }))}
+            onSelect={(place) => {
+              setForm((f) => ({
+                ...f,
+                address: place.address,
+                latitude: place.lat,
+                longitude: place.lng,
+              }))
+              toast('Hub location verified')
+            }}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -120,12 +128,10 @@ export default function AddCenterModal({ open, onClose }) {
               Latitude
             </label>
             <input
-              required
-              type="number"
-              step="any"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              readOnly
+              className="w-full rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 outline-none dark:border-zinc-800 dark:bg-zinc-900/50"
               value={form.latitude}
-              onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))}
+              placeholder="Auto-filled"
             />
           </div>
           <div>
@@ -133,12 +139,10 @@ export default function AddCenterModal({ open, onClose }) {
               Longitude
             </label>
             <input
-              required
-              type="number"
-              step="any"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              readOnly
+              className="w-full rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 outline-none dark:border-zinc-800 dark:bg-zinc-900/50"
               value={form.longitude}
-              onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))}
+              placeholder="Auto-filled"
             />
           </div>
         </div>

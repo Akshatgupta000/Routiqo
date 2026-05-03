@@ -62,6 +62,7 @@ class RouteOptimizationResource extends JsonResource
             'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
             'next_stop_sequence' => $this->next_stop_sequence,
             'departure_at' => optional($this->departure_at)?->toIso8601String(),
+            'geometry' => $this->geometry,
         ];
     }
 }
