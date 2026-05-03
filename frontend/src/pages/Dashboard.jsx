@@ -6,6 +6,7 @@ import Spinner from '../components/UI/Spinner'
 import ActiveRouteSummary from '../components/Route/ActiveRouteSummary'
 import RouteDetailsPanel from '../components/Route/RouteDetailsPanel'
 import SimulationControls from '../components/Route/SimulationControls'
+import DeliveryInput from '../components/Forms/DeliveryInput'
 import { useApp } from '../context/AppContext'
 
 export default function Dashboard() {
@@ -91,6 +92,8 @@ export default function Dashboard() {
             {loading.generate ? 'Generating…' : 'Generate route'}
           </Button>
         </Card>
+
+        <DeliveryInput />
 
         <ActiveRouteSummary route={activeRoute} />
         <SimulationControls />

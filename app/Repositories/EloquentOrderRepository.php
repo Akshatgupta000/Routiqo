@@ -12,7 +12,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
 {
     public function paginateWithFilters(int $perPage, ?OrderStatus $status = null): LengthAwarePaginator
     {
-        $query = Order::query()->with('deliveryCenter')->orderByDesc('id');
+        $query = Order::query()->with('deliveryCenter')->orderByDesc('_id');
 
         if ($status instanceof OrderStatus) {
             $query->where('status', $status);
@@ -23,7 +23,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
 
     public function all(): Collection
     {
-        return Order::query()->with('deliveryCenter')->orderByDesc('id')->get();
+        return Order::query()->with('deliveryCenter')->orderByDesc('_id')->get();
     }
 
     public function find(int $id): ?Order
@@ -48,8 +48,8 @@ class EloquentOrderRepository implements OrderRepositoryInterface
         return Order::query()
             ->where('delivery_center_id', $deliveryCenterId)
             ->where('status', OrderStatus::Pending)
-            ->orderByRaw("CASE priority WHEN 'high' THEN 3 WHEN 'medium' THEN 2 ELSE 1 END DESC")
-            ->orderBy('id')
+            ->orderBy('priority')
+            ->orderBy('_id')
             ->get();
     }
 

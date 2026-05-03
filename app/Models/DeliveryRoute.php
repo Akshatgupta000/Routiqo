@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\OptimizationProfile;
 use App\Enums\RouteStatus;
-use Illuminate\Database\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 

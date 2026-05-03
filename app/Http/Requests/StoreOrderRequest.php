@@ -17,8 +17,8 @@ class StoreOrderRequest extends FormRequest
     {
         return [
             'address' => ['required', 'string', 'max:500'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'latitude' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
             'priority' => ['sometimes', new Enum(OrderPriority::class)],
         ];
     }

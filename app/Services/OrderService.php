@@ -17,13 +17,25 @@ class OrderService
     public function __construct(
         private readonly OrderRepositoryInterface $orders,
         private readonly DeliveryCenterRepositoryInterface $centers,
+        private readonly GeocodingService $geocoding,
     ) {}
 
     public function createOrder(array $payload): Order
     {
+        $lat = $payload['latitude'] ?? null;
+        $lng = $payload['longitude'] ?? null;
+        $address = $payload['address'];
+
+        if ($lat === null || $lng === null) {
+            $coords = $this->geocoding->geocode($address);
+            $lat = $coords['lat'];
+            $lng = $coords['lng'];
+            $address = $coords['display_name']; // Optional: use the verified address
+        }
+
         $center = $this->resolveNearestCenter(
-            (float) $payload['latitude'],
-            (float) $payload['longitude']
+            (float) $lat,
+            (float) $lng
         );
 
         $priority = isset($payload['priority'])
@@ -31,9 +43,9 @@ class OrderService
             : OrderPriority::Medium;
 
         $data = [
-            'address' => $payload['address'],
-            'latitude' => $payload['latitude'],
-            'longitude' => $payload['longitude'],
+            'address' => $address,
+            'latitude' => $lat,
+            'longitude' => $lng,
             'delivery_center_id' => $center->id,
             'status' => OrderStatus::Pending,
             'priority' => $priority,

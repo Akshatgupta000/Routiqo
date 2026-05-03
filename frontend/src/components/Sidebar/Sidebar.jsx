@@ -3,6 +3,8 @@ import Card from '../UI/Card'
 import Button from '../UI/Button'
 import { useApp } from '../../context/AppContext'
 import { formatDuration, formatKm } from '../../utils/format'
+import AddCenterModal from '../Forms/AddCenterModal'
+import { useState } from 'react'
 
 const linkClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
@@ -20,6 +22,8 @@ export default function Sidebar() {
     selectedCenterId,
     setSelectedCenterId,
   } = useApp()
+
+  const [addCenterOpen, setAddCenterOpen] = useState(false)
 
   const stops = activeRoute?.stops?.length ?? 0
 
@@ -55,9 +59,18 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800">
-        <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-          Delivery center
-        </label>
+        <div className="mb-1 flex items-center justify-between">
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+            Delivery center
+          </label>
+          <button
+            type="button"
+            className="text-[10px] font-bold uppercase text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            onClick={() => setAddCenterOpen(true)}
+          >
+            + Add New
+          </button>
+        </div>
         <select
           className="mb-3 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           value={selectedCenterId ?? ''}
@@ -105,6 +118,8 @@ export default function Sidebar() {
           )}
         </Card>
       </div>
+
+      <AddCenterModal open={addCenterOpen} onClose={() => setAddCenterOpen(false)} />
     </div>
   )
 }

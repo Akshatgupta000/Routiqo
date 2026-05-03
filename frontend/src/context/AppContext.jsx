@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react'
 import * as api from '../services/api'
-import { computeVehiclePosition } from '../utils/routeMap'
+import { computeVehiclePosition } from '../utils/routeMap'import { decodePolyline } from '../utils/polyline'
 
 export const AppContext = createContext(null)
 
@@ -44,8 +44,11 @@ export function AppProvider({ children }) {
   const [activeProfile, setActiveProfile] = useState('shortest')
   const [selectedCenterId, setSelectedCenterId] = useState(null)
   const [loading, setLoading] = useState({ global: false })
+  const [mapFocus, setMapFocus] = useState(null)
   const [toasts, setToasts] = useState([])
   const [bootstrapError, setBootstrapError] = useState(null)
+  const [draftDeliveries, setDraftDeliveries] = useState([])
+  const [osrmRoute, setOsrmRoute] = useState([])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -76,8 +79,60 @@ export function AppProvider({ children }) {
     const data = await api.getCenters()
     const list = Array.isArray(data) ? data : data?.data ?? []
     setCenters(list)
-    setSelectedCenterId((prev) => prev ?? list[0]?.id ?? null)
     return list
+  }, [])
+
+  const addCenterAction = useCallback(async (payload) => {
+    setLoading((l) => ({ ...l, addCenter: true }))
+    try {
+      const newCenter = await api.createCenter(payload)
+      const list = await refreshCenters()
+      
+      // Auto-select and focus the new center
+      setSelectedCenterId(newCenter.id)
+      setMapFocus({
+        lat: Number(newCenter.latitude),
+        lng: Number(newCenter.longitude),
+        zoom: 14
+      })
+      
+      toast(`Delivery center "${newCenter.name}" added and centered.`)
+      return newCenter
+    } catch (e) {
+      const msg = e?.response?.data?.message || e.message || 'Failed to add center'
+      toast(msg, 'error')
+      throw e
+    } finally {
+      setLoading((l) => ({ ...l, addCenter: false }))
+    }
+  }, [refreshCenters, toast])
+
+  const fetchOSRMPath = useCallback(async (route) => {
+    if (!route?.delivery_center || !route?.stops?.length) {
+      setOsrmRoute([])
+      return
+    }
+
+    const points = [
+      [route.delivery_center.longitude, route.delivery_center.latitude],
+      ...route.stops.map(s => [s.longitude, s.latitude]),
+      [route.delivery_center.longitude, route.delivery_center.latitude] // Close loop
+    ]
+
+    const coordsStr = points.map(p => p.join(',')).join(';')
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=polyline`
+
+    try {
+      const response = await fetch(url)
+      const data = await response.json()
+      if (data.code === 'Ok' && data.routes?.[0]) {
+        const decoded = decodePolyline(data.routes[0].geometry)
+        setOsrmRoute(decoded)
+      }
+    } catch (err) {
+      console.error('OSRM Error:', err)
+      setOsrmRoute([])
+    }
   }, [])
 
   const refreshOrders = useCallback(async (filters = {}) => {
@@ -182,7 +237,21 @@ export function AppProvider({ children }) {
   }, [selectedCenterId, activeProfile, refreshOrders, refreshRoutes, toast])
 
   const selectRouteFromList = useCallback((route) => {
-    setActiveRouteBase(stripMeta(route))
+    const stripped = stripMeta(route)
+    setActiveRouteBase(stripped)
+    fetchOSRMPath(stripped)
+  }, [fetchOSRMPath])
+
+  const addDraftDelivery = useCallback((delivery) => {
+    setDraftDeliveries((prev) => [...prev, { ...delivery, id: Date.now() }])
+  }, [])
+
+  const removeDraftDelivery = useCallback((id) => {
+    setDraftDeliveries((prev) => prev.filter((d) => d.id !== id))
+  }, [])
+
+  const clearDraftDeliveries = useCallback(() => {
+    setDraftDeliveries([])
   }, [])
 
   const value = useMemo(
@@ -215,6 +284,13 @@ export function AppProvider({ children }) {
       selectRouteFromList,
       vehiclePosition,
       bootstrapError,
+      setMapFocus,
+      addCenterAction,
+      draftDeliveries,
+      addDraftDelivery,
+      removeDraftDelivery,
+      clearDraftDeliveries,
+      osrmRoute,
     }),
     [
       theme,
@@ -241,6 +317,13 @@ export function AppProvider({ children }) {
       selectRouteFromList,
       vehiclePosition,
       bootstrapError,
+      mapFocus,
+      addCenterAction,
+      draftDeliveries,
+      addDraftDelivery,
+      removeDraftDelivery,
+      clearDraftDeliveries,
+      osrmRoute,
     ]
   )
 

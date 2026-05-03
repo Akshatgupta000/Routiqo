@@ -1,66 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚚 LogiRoute AI
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-## About Laravel
+**LogiRoute AI** is a professional, production-ready logistics management platform designed to streamline delivery operations through intelligent route optimization. Built with a modern full-stack architecture, it empowers fleet managers to visualize, simulate, and optimize complex delivery networks in real-time.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 📌 Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **📍 Dynamic Route Optimization**: Generate the most efficient delivery paths based on "Shortest Distance" or "Fastest Time" profiles using advanced clustering algorithms.
+- **🗺️ Interactive Map Dashboard**: Real-time visualization of delivery centers, orders, and vehicle paths powered by Leaflet.
+- **⚡ Live Route Simulation**: Step-through or auto-play vehicle movements to monitor delivery progress and ETA accuracy.
+- **🚛 Fleet & Center Management**: Comprehensive tools to manage delivery hubs, vehicle capacities, and driver assignments.
+- **📦 Order Lifecycle Tracking**: Monitor orders from pending status through assignment to final delivery.
+- **📊 Performance Analytics**: Insightful metrics on total distance, estimated arrival times, and vehicle utilization.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 🛠️ Tech Stack
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+| Component | Technology |
+| :--- | :--- |
+| **Frontend** | React 19, Vite, Tailwind CSS 4, React Leaflet, Axios |
+| **Backend** | Laravel 11 (PHP 8.2+), Eloquent ORM, REST API |
+| **Database** | SQLite (Production-ready local storage) |
+| **Icons & UI** | Lucide React, Framer Motion (Micro-animations) |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+### 📂 Project Structure
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+├── app/                # Laravel Backend (Models, Controllers, Services)
+│   ├── Services/       # Route optimization & clustering logic
+│   └── Repositories/   # Data access layer
+├── frontend/           # React Frontend (Vite + React 19)
+│   ├── src/
+│   │   ├── components/ # Map, Route, and UI components
+│   │   ├── pages/      # Dashboard, Orders, Vehicles, Routes
+│   │   └── context/    # Global State Management (App Context)
+├── database/           # Migrations & Seeders (SQLite)
+├── routes/             # API & Web route definitions
+└── public/             # Static assets & build files
+```
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### ⚙️ Installation & Setup
 
-## Contributing
+#### Prerequisites
+- PHP 8.2+ & Composer
+- Node.js (v18+) & NPM
+- SQLite3
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#### 1. Backend Setup (Laravel)
+```bash
+# Clone the repository
+git clone https://github.com/[YOUR_USERNAME]/[REPO_NAME].git
+cd [REPO_NAME]
 
-## Code of Conduct
+# Install PHP dependencies
+composer install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Configure Environment
+cp .env.example .env
+php artisan key:generate
 
-## Security Vulnerabilities
+# Setup Database (SQLite)
+touch database/database.sqlite
+php artisan migrate --seed
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Start Laravel Server
+php artisan serve
+```
 
-## License
+#### 2. Frontend Setup (React)
+```bash
+# Navigate to frontend directory
+cd frontend
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Install NPM dependencies
+npm install
+
+# Start Development Server
+npm run dev
+```
+
+---
+
+### 🚀 Usage
+
+1. **Dashboard**: View all delivery centers and active orders on the map.
+2. **Generate Routes**: Select a delivery center and click **"Generate Route"**. Choose between "Shortest" or "Fastest" paths.
+3. **Simulation**: Click **"Start Route"** on an optimized path to begin the delivery simulation.
+4. **Management**: Use the sidebar navigation to add new Vehicles, Delivery Centers, or Orders.
+
+---
+
+### 📸 Screenshots / Demo
+
+> [!NOTE]
+> *Dashboard previews and video demos can be added here once the application is deployed.*
+
+---
+
+### 🔮 Future Improvements
+
+- [ ] **AI-Powered Traffic Integration**: Integrate real-time traffic APIs (Google Maps/Mapbox) for dynamic routing.
+- [ ] **Mobile App for Drivers**: Dedicated React Native app for real-time delivery confirmations and GPS tracking.
+- [ ] **Advanced Analytics**: Detailed reporting on fuel savings and driver performance metrics.
+- [ ] **Multi-Carrier Support**: Assign routes to third-party logistics providers automatically.
+
+---
+
+### 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+1. Fork the Project.
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the Branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+---
+
+### 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+<p align="center">Made with ❤️ for Logistics Efficiency</p>
