@@ -6,11 +6,12 @@ import Spinner from '../components/UI/Spinner'
 import FleetOverview from '../components/Route/FleetOverview'
 import ActiveRouteSummary from '../components/Route/ActiveRouteSummary'
 import RouteDetailsPanel from '../components/Route/RouteDetailsPanel'
-import SimulationControls from '../components/Route/SimulationControls'
+import CenterOrdersPanel from '../components/Route/CenterOrdersPanel'
 import { useApp } from '../context/AppContext'
 
 export default function Dashboard() {
   const [showStopSequence, setShowStopSequence] = useState(false)
+  const [showCenterOrders, setShowCenterOrders] = useState(false)
   const {
     centers,
     orders,
@@ -56,10 +57,10 @@ export default function Dashboard() {
       </section>
 
       <section className="flex w-full shrink-0 flex-col gap-4 lg:w-96 lg:max-w-md lg:overflow-y-auto">
-        <Card className="p-4 sm:p-6">
+        <Card className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
-              Fleet optimization
+              Route optimization
             </h2>
             <div className="flex items-center gap-2">
                <span className="text-[10px] uppercase font-bold text-zinc-400">Zones</span>
@@ -95,24 +96,25 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-            Optimizes delivery routes across the entire available fleet. Each vehicle receives a balanced cluster of orders based on geographical proximity.
-          </p>
           <Button
-            className="mt-4 w-full"
+            className="mt-3 w-full"
             disabled={loading.generate || !selectedCenterId}
             onClick={() => generateRoutesAction()}
           >
-            {loading.generate ? 'Generating…' : 'Optimize Fleet Routes'}
+            {loading.generate ? 'Generating…' : 'Generate Route'}
           </Button>
         </Card>
 
+        {selectedCenterId && (
+          <CenterOrdersPanel centerId={selectedCenterId} />
+        )}
+
+        <FleetOverview />
         <ActiveRouteSummary 
           route={activeRoute} 
           onToggleSequence={() => setShowStopSequence(!showStopSequence)}
           showSequence={showStopSequence}
         />
-        <SimulationControls />
         {showStopSequence && <RouteDetailsPanel route={activeRoute} />}
       </section>
     </div>

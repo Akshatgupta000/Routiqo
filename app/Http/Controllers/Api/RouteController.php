@@ -94,32 +94,6 @@ class RouteController extends Controller
         return response()->json(['comparisons' => $payload]);
     }
 
-    public function start(Request $request, mixed $id): JsonResponse
-    {
-        $route = $this->routeService->startRoute($id);
-
-        return response()->json(
-            (new RouteOptimizationResource($route))->toArray($request)
-        );
-    }
-
-    public function nextStop(Request $request, mixed $id): JsonResponse
-    {
-        $route = $this->routeService->advanceNextStop($id);
-
-        return response()->json(
-            (new RouteOptimizationResource($route))->toArray($request)
-        );
-    }
-
-    public function complete(Request $request, mixed $id): JsonResponse
-    {
-        $route = $this->routeService->completeRoute($id);
-
-        return response()->json(
-            (new RouteOptimizationResource($route))->toArray($request)
-        );
-    }
 
     public function clear(Request $request): JsonResponse
     {

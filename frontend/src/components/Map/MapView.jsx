@@ -160,7 +160,6 @@ export default function MapView({
         }
 
         toast(`Hub: ${nearest.name} (${nearest.dist.toFixed(1)} km)`)
-        generateRoutesAction(nearest.id)
       } catch (err) {
         console.error('Dispatch error:', err)
         toast('Failed to link order to hub.', 'error')
@@ -287,7 +286,6 @@ export default function MapView({
                 eventHandlers={{
                   click: () => {
                     setSelectedCenterId(c.id)
-                    generateRoutesAction(c.id)
                   }
                 }}
               >

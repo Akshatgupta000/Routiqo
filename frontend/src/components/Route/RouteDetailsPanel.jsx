@@ -14,9 +14,9 @@ export default function RouteDetailsPanel({ route }) {
 
   return (
     <Card className="max-h-[40vh] overflow-hidden !p-0">
-      <div className="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Stop sequence</h3>
-        <p className="text-xs text-zinc-500">ETA and leg distance from API</p>
+      <div className="border-b border-zinc-100 px-4 py-2.5 dark:border-zinc-800">
+        <h3 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-tight">Stop sequence</h3>
+        <p className="text-[10px] text-zinc-500">Live ETA and leg metrics</p>
       </div>
       <div className="max-h-[calc(40vh-4rem)] overflow-y-auto">
         <table className="w-full text-left text-xs">

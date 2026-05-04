@@ -33,6 +33,3 @@ Route::delete('/routes/clear', [RouteController::class, 'clear']);
 Route::get('/routes', [RouteController::class, 'index']);
 Route::get('/routes/{id}', [RouteController::class, 'show']);
 
-Route::post('/routes/{id}/start', [RouteController::class, 'start']);
-Route::post('/routes/{id}/next-stop', [RouteController::class, 'nextStop']);
-Route::post('/routes/{id}/complete', [RouteController::class, 'complete']);

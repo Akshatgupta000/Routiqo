@@ -135,19 +135,5 @@ export async function clearRoutes(payload = {}) {
   return data
 }
 
-export async function startRoute(routeId) {
-  const { data } = await client.post(`/routes/${routeId}/start`)
-  return data
-}
-
-export async function nextStopRoute(routeId) {
-  const { data } = await client.post(`/routes/${routeId}/next-stop`)
-  return data
-}
-
-export async function completeRoute(routeId) {
-  const { data } = await client.post(`/routes/${routeId}/complete`)
-  return data
-}
 
 export { client }

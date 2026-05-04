@@ -29,7 +29,7 @@ export default function FleetOverview() {
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Fleet Dispatch</h3>
+        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Vehicle Dispatch</h3>
         <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-500 font-bold uppercase">
           {displayedRoutes.length} Vehicles
         </span>

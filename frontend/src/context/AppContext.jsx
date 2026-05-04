@@ -470,38 +470,6 @@ export function AppProvider({ children }) {
     setActiveRouteBase(stripped)
   }, [])
 
-  const applyRouteSimulationUpdate = useCallback((updatedRoute) => {
-    const normalized = normalizeRouteForSimulation(stripMeta(updatedRoute))
-    if (!normalized) return
-
-    const updatedKey = getRouteKey(normalized)
-
-    setActiveRouteBase((prev) => {
-      if (!prev || getRouteKey(prev) === updatedKey) return normalized
-      return prev
-    })
-
-    setActiveMultiRoutes((prev) => {
-      if (!Array.isArray(prev) || prev.length === 0) return prev
-      return prev.map((r) => (getRouteKey(r) === updatedKey ? normalized : r))
-    })
-
-    setComparisons((prev) => {
-      if (!Array.isArray(prev) || prev.length === 0) return prev
-      return prev.map((row) => ({
-        ...row,
-        shortest_distance_route:
-          getRouteKey(row.shortest_distance_route) === updatedKey
-            ? normalized
-            : row.shortest_distance_route,
-        fastest_time_route:
-          getRouteKey(row.fastest_time_route) === updatedKey
-            ? normalized
-            : row.fastest_time_route,
-      }))
-    })
-  }, [])
-
 
   const addDraftDelivery = useCallback((delivery) => {
     setDraftDeliveries((prev) => [...prev, { ...delivery, id: Date.now() }])
@@ -510,17 +478,6 @@ export function AppProvider({ children }) {
   const removeDraftDelivery = useCallback((id) => {
     setDraftDeliveries((prev) => prev.filter((d) => d.id !== id))
   }, [])
-
-  const simulateLegAction = useCallback((route) => {
-    if (!route || !route.vehicle_id) return
-    const path = buildLegPath(route, centers)
-    if (!path || path.length < 2) return
-    
-    playbackPathsRef.current = { [route.vehicle_id]: path }
-    setRoutePlaybackStep({ [route.vehicle_id]: 0 })
-    setSimulationPhase('playing')
-    runPlaybackTimer()
-  }, [centers, runPlaybackTimer])
 
   const startFleetSimulation = useCallback(() => {
     const routesToSimulate = (
@@ -621,7 +578,6 @@ export function AppProvider({ children }) {
       setComparisons,
       activeRoute,
       setActiveRoute,
-      applyRouteSimulationUpdate,
       activeMultiRoutes,
       setActiveMultiRoutes,
       setActiveRouteBase,
@@ -678,7 +634,6 @@ export function AppProvider({ children }) {
       comparisons,
       activeRoute,
       setActiveRoute,
-      applyRouteSimulationUpdate,
       activeMultiRoutes,
       setActiveMultiRoutes,
       setActiveRouteBase,
@@ -710,7 +665,6 @@ export function AppProvider({ children }) {
       routePlaybackCoords,
       routePlaybackStep,
       startFleetSimulation,
-      simulateLegAction,
       pauseFleetSimulation,
       resumeFleetSimulation,
       resetFleetSimulation,
