@@ -88,6 +88,10 @@ function normalizeRouteForSimulation(route) {
   }
 }
 
+function getTodayString() {
+  return new Date().toISOString().split('T')[0]
+}
+
 export function AppProvider({ children }) {
   const [theme, setTheme] = useState(readInitialTheme)
   const [centers, setCenters] = useState([])
@@ -100,6 +104,7 @@ export function AppProvider({ children }) {
   const [selectedCenterId, setSelectedCenterId] = useState(null)
   const [activeOrderId, setActiveOrderId] = useState(null)
   const [loading, setLoading] = useState({ global: false })
+  const [selectedDate, setSelectedDate] = useState(getTodayString)
   const [mapFocus, setMapFocus] = useState(null)
   const [toasts, setToasts] = useState([])
   const [bootstrapError, setBootstrapError] = useState(null)
@@ -245,11 +250,11 @@ export function AppProvider({ children }) {
   }, [refreshCenters, toast])
 
   const refreshOrders = useCallback(async (filters = {}) => {
-    const data = await api.getOrders({ per_page: 100, ...filters })
+    const data = await api.getOrders({ per_page: 100, date: selectedDate, ...filters })
     const list = data?.data ?? data ?? []
     setOrders(Array.isArray(list) ? list : [])
     return list
-  }, [])
+  }, [selectedDate])
 
   const refreshVehicles = useCallback(async () => {
     const data = await api.getVehicles()
@@ -399,13 +404,15 @@ export function AppProvider({ children }) {
 
   const generateRoutesAction = useCallback(async (overrideCenterId = null) => {
     const centerToUse = overrideCenterId || selectedCenterId
-    const payload =
-      centerToUse != null ? { delivery_center_id: centerToUse } : {}
+    const payload = {
+      ...(centerToUse != null ? { delivery_center_id: centerToUse } : {}),
+      date: selectedDate,
+    }
     setLoading((l) => ({ ...l, generate: true }))
     try {
       let data
       if (activeMultiRoutes.length > 0 && centerToUse) {
-        data = await api.regenerateRoutes(centerToUse)
+        data = await api.regenerateRoutes(centerToUse, { date: selectedDate })
       } else {
         data = await api.generateRoute(payload)
       }
@@ -447,6 +454,7 @@ export function AppProvider({ children }) {
     }
   }, [
     selectedCenterId,
+    selectedDate,
     refreshOrders,
     refreshRoutes,
     toast,
@@ -554,6 +562,16 @@ export function AppProvider({ children }) {
     setDraftDeliveries([])
   }, [])
 
+  // When selectedDate changes, refresh orders and clear route state
+  useEffect(() => {
+    refreshOrders()
+    // Clear any active routes/simulation when date changes
+    setActiveRouteBase(null)
+    setActiveMultiRoutes([])
+    setComparisons([])
+    resetFleetSimulation({ silent: true })
+  }, [selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const value = useMemo(
     () => ({
       theme,
@@ -572,6 +590,8 @@ export function AppProvider({ children }) {
       setActiveRouteBase,
       selectedCenterId,
       setSelectedCenterId,
+      selectedDate,
+      setSelectedDate,
       activeOrderId,
       setActiveOrderId,
       loading,
@@ -625,6 +645,7 @@ export function AppProvider({ children }) {
       setActiveMultiRoutes,
       setActiveRouteBase,
       selectedCenterId,
+      selectedDate,
       activeOrderId,
       loading,
       setLoading,

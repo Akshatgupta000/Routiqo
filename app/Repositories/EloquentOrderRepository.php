@@ -10,12 +10,16 @@ use Illuminate\Support\Collection;
 
 class EloquentOrderRepository implements OrderRepositoryInterface
 {
-    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null): LengthAwarePaginator
+    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null, ?string $date = null): LengthAwarePaginator
     {
         $query = Order::query()->with(['deliveryCenter', 'vehicle'])->orderByDesc('_id');
 
         if ($status instanceof OrderStatus) {
             $query->where('status', $status);
+        }
+
+        if ($date) {
+            $query->whereDate('delivery_date', $date);
         }
 
         return $query->paginate($perPage);
@@ -76,5 +80,19 @@ class EloquentOrderRepository implements OrderRepositoryInterface
             ->whereIn('id', $orderIds)
             ->where('status', OrderStatus::Assigned)
             ->update(['status' => OrderStatus::Pending]);
+    }
+
+    public function pendingForCenterOnDate(mixed $deliveryCenterId, string $date): Collection
+    {
+        return Order::query()
+            ->where('delivery_center_id', $deliveryCenterId)
+            ->whereDate('delivery_date', $date)
+            ->whereIn('status', [OrderStatus::Pending, OrderStatus::Assigned])
+            ->whereDoesntHave('routeStop.route', function ($q) {
+                $q->where('status', \App\Enums\RouteStatus::InProgress);
+            })
+            ->orderBy('priority')
+            ->orderBy('_id')
+            ->get();
     }
 }

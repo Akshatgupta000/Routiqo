@@ -17,6 +17,7 @@ class GenerateRouteRequest extends FormRequest
         return [
             'delivery_center_id' => ['nullable', 'string'],
             'departure_at' => ['nullable', 'date'],
+            'date' => ['required', 'date'],
         ];
     }
 }

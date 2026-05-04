@@ -40,13 +40,20 @@ class RouteService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function generateRoutes(mixed $deliveryCenterId = null, ?Carbon $departureAt = null): array
+    public function generateRoutes(mixed $deliveryCenterId = null, ?Carbon $departureAt = null, ?string $date = null): array
     {
+        if (!$date) {
+            throw ValidationException::withMessages([
+                'date' => __('A delivery date is required to generate routes.'),
+            ]);
+        }
+
         $departureAt ??= now();
 
         Log::info('route.generate.start', [
             'delivery_center_id' => $deliveryCenterId,
             'departure_at' => $departureAt->toIso8601String(),
+            'date' => $date,
         ]);
 
         $centers = $this->resolveCenters($deliveryCenterId);
@@ -59,7 +66,7 @@ class RouteService
             // Auto-capture unassigned orders in the center's area before generating
             $this->captureNearbyOrders($center);
 
-            $batch = $this->processCenter($center, $departureAt);
+            $batch = $this->processCenter($center, $departureAt, $date);
             $comparisons = array_merge($comparisons, $batch);
         }
 
@@ -116,7 +123,7 @@ class RouteService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function regenerateRoutesForCenter(mixed $deliveryCenterId, ?Carbon $departureAt = null): array
+    public function regenerateRoutesForCenter(mixed $deliveryCenterId, ?Carbon $departureAt = null, ?string $date = null): array
     {
         $center = $this->centers->find($deliveryCenterId);
         if (! $center instanceof DeliveryCenter) {
@@ -129,7 +136,7 @@ class RouteService
 
         $this->clearPlannedRoutesInternal($deliveryCenterId);
 
-        return $this->generateRoutes($deliveryCenterId, $departureAt);
+        return $this->generateRoutes($deliveryCenterId, $departureAt, $date);
     }
 
     /**
@@ -208,9 +215,9 @@ class RouteService
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function processCenter(DeliveryCenter $center, Carbon $departureAt): array
+    private function processCenter(DeliveryCenter $center, Carbon $departureAt, string $date): array
     {
-        $pending = $this->orders->pendingForCenter($center->id)
+        $pending = $this->orders->pendingForCenterOnDate($center->id, $date)
             ->filter(function ($o) use ($center) {
                 return \App\Helpers\DistanceHelper::kmBetween(
                     (float) $o->latitude, (float) $o->longitude,

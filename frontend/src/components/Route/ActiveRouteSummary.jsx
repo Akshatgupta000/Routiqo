@@ -1,4 +1,5 @@
 import Card from '../UI/Card'
+import { formatId } from '../../utils/format'
 import Badge from '../UI/Badge'
 import { formatDuration, formatKm } from '../../utils/format'
 
@@ -19,7 +20,7 @@ export default function ActiveRouteSummary({ route, onToggleSequence, showSequen
             Selected route
           </p>
           <p className="text-lg font-bold text-zinc-900 dark:text-white">
-            Route #{route.route_id}
+            Route #{formatId(route.route_id)}
           </p>
         </div>
         <div className="flex items-center gap-3">

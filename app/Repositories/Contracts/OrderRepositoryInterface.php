@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 
 interface OrderRepositoryInterface
 {
-    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null): LengthAwarePaginator;
+    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null, ?string $date = null): LengthAwarePaginator;
 
     public function all(): Collection;
 
@@ -29,4 +29,6 @@ interface OrderRepositoryInterface
      * @param  array<int>  $orderIds
      */
     public function revertAssignedToPending(array $orderIds): void;
+
+    public function pendingForCenterOnDate(mixed $deliveryCenterId, string $date): Collection;
 }

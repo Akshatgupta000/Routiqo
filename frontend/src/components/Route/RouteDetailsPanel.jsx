@@ -1,5 +1,5 @@
 import Card from '../UI/Card'
-import { formatEta, formatKm } from '../../utils/format'
+import { formatEta, formatKm, formatId } from '../../utils/format'
 
 export default function RouteDetailsPanel({ route }) {
   if (!route?.stops?.length) {
@@ -34,7 +34,7 @@ export default function RouteDetailsPanel({ route }) {
                 <td className="px-4 py-2 font-bold text-emerald-600 dark:text-emerald-400">
                   {s.sequence}
                 </td>
-                <td className="px-4 py-2">#{s.order_id}</td>
+                <td className="px-4 py-2">#{formatId(s.order_id)}</td>
                 <td className="px-4 py-2">{formatKm(s.distance_from_previous)}</td>
                 <td className="px-4 py-2 whitespace-nowrap">{formatEta(s.eta)}</td>
               </tr>

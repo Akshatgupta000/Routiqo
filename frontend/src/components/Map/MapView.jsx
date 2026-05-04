@@ -4,6 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { centerIcon, orderIcon, numberedStopIcon, vehicleIcon } from './mapIcons'
 import { stopLatLng, getDistance } from '../../utils/coords'
+import { formatId } from '../../utils/format'
 import { extractRouteCoordinates } from '../../utils/routeGeometry'
 import { buildLegPath } from '../../utils/simplePlaybackPath'
 import { useApp } from '../../context/AppContext'
@@ -18,10 +19,10 @@ const ROUTE_COLORS = [
   { primary: '#06b6d4', glow: '#22d3ee' }, // Cyan
 ]
 
-function getMarkerColor(status) {
+function getMarkerColor(status, routeColor = null) {
   switch (status) {
     case 'delivered':
-      return '#16a34a'
+      return routeColor || '#16a34a'
     case 'current':
       return '#2563eb'
     default:
@@ -182,6 +183,11 @@ export default function MapView({
 
   const bounds = useMemo(() => {
     const b = L.latLngBounds([])
+    if (!selectedCenterId) {
+      // Include India's bounds so reset always zooms out to country level
+      b.extend([35.6745, 68.1690]) // North-West
+      b.extend([8.0883, 97.3956])  // South-East
+    }
     centers.forEach((c) => {
       b.extend([Number(c.latitude), Number(c.longitude)])
     })
@@ -243,7 +249,7 @@ export default function MapView({
           )
         })}
         <MapClickHandler onMapClick={() => setActiveOrderId(null)} />
-        {bounds && <FitBounds bounds={bounds} />}
+        {bounds && !selectedCenterId && <FitBounds bounds={bounds} />}
         {(simulationPhase === 'running' || simulationPhase === 'paused') && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-1000 bg-zinc-900/90 text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 border border-white/10 backdrop-blur-md">
             <div className="flex gap-1">
@@ -293,11 +299,8 @@ export default function MapView({
                   <div className="text-[10px] font-bold px-1">{c.name}</div>
                 </Tooltip>
                 {simulationPhase === 'idle' && (
-                  <Popup minWidth={120}>
-                    <div className="text-[10px] leading-tight">
-                      <strong className="block text-blue-600 dark:text-blue-400 mb-0.5">{c.name}</strong>
-                      <span className="text-zinc-500 font-mono text-[9px]">ID: {String(c.id).substring(0, 12)}</span>
-                    </div>
+                  <Popup>
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{c.name}</span>
                   </Popup>
                 )}
               </Marker>
@@ -402,11 +405,14 @@ export default function MapView({
                   click: () => handleOrderClick(o),
                 }}
               >
+                <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+                  <div className="text-[10px] font-bold px-1">#{formatId(o.id)}</div>
+                </Tooltip>
                 {activeOrderId === o.id && (
                   <Popup autoClose={false} closeOnClick={false}>
                     <div className="flex flex-col gap-1">
                       <div className="flex justify-between items-start">
-                        <strong className="text-sm">Order #{o.id}</strong>
+                        <strong className="text-sm">Order #{formatId(o.id)}</strong>
                         {isOutOfRange && (
                           <span className="bg-red-100 text-red-700 text-[9px] px-1.5 py-0.5 rounded font-black uppercase">
                             Out of Range
@@ -473,22 +479,69 @@ export default function MapView({
           let globalStopCount = 0;
           return displayedRoutes
             .map((route, routeIdx) => {
+              const vid = String(route.vehicle?.id ?? route.vehicle_id)
+              const step = routePlaybackStep?.[vid]
+              const path = routePlaybackCoords?.[vid]
+
+              const stopIndices = {};
+              if (simulationPhase !== 'idle' && path?.length) {
+                 const sortedStops = [...(route.stops || [])].sort((a,b) => a.sequence - b.sequence);
+                 let searchStart = 0;
+                 sortedStops.forEach(s => {
+                    const [slat, slng] = stopLatLng(s);
+                    let minDistSq = Infinity;
+                    let minIdx = searchStart;
+                    for (let i = searchStart; i < path.length; i++) {
+                       const distSq = (slat - path[i][0]) ** 2 + (slng - path[i][1]) ** 2;
+                       if (distSq < minDistSq) { 
+                           minDistSq = distSq; 
+                           minIdx = i; 
+                       }
+                       // If we've found a close point and the distance starts increasing significantly,
+                       // we've passed the local minimum (the stop). Break to prevent matching a return trip.
+                       if (minDistSq < 1e-5 && distSq > minDistSq + 1e-5) {
+                          break;
+                       }
+                    }
+                    stopIndices[s.sequence] = minIdx;
+                    searchStart = minIdx; // Next stop searches from here onwards
+                 });
+              }
+
+              const routeColor = ROUTE_COLORS[routeIdx % ROUTE_COLORS.length].primary;
+
               return route.stops?.map((s) => {
                 globalStopCount++;
                 const [lat, lng] = stopLatLng(s)
-                const stopStatus = getStopStatus(route, s)
+                
+                let stopStatus;
+                if (simulationPhase === 'idle' || typeof step !== 'number' || !path) {
+                  stopStatus = getStopStatus(route, s);
+                } else {
+                  const requiredStep = stopIndices[s.sequence] || 0;
+                  // Provide a small buffer so it doesn't instantly jump at the exact frame
+                  if (step >= requiredStep) {
+                    stopStatus = 'delivered';
+                  } else {
+                    const isNext = [...(route.stops || [])]
+                      .filter(x => stopIndices[x.sequence] > step)
+                      .sort((a, b) => a.sequence - b.sequence)[0]?.sequence === s.sequence;
+                    stopStatus = isNext ? 'current' : 'pending';
+                  }
+                }
+
                 return (
                   <Marker
                     key={`s-${route.route_id || 'unassigned'}-${routeIdx}-${s.order_id}`}
                     position={[lat, lng]}
-                    icon={numberedStopIcon(globalStopCount, getMarkerColor(stopStatus))}
+                    icon={numberedStopIcon(globalStopCount, getMarkerColor(stopStatus, routeColor))}
                   >
                     <Popup>
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                           Vehicle: {route.vehicle?.name || 'Unknown'}
                         </span>
-                        <strong className="text-sm">Global Stop {globalStopCount} · Order #{s.order_id}</strong>
+                        <strong className="text-sm">Global Stop {globalStopCount} · Order #{formatId(s.order_id)}</strong>
                         <span className="text-[10px] uppercase font-bold text-zinc-500">
                           Status: {stopStatus}
                         </span>

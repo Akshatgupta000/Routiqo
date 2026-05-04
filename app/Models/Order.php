@@ -16,6 +16,7 @@ class Order extends Model
         'address',
         'latitude',
         'longitude',
+        'delivery_date',
         'delivery_center_id',
         'vehicle_id',
         'status',
@@ -27,6 +28,7 @@ class Order extends Model
         return [
             'latitude' => 'float',
             'longitude' => 'float',
+            'delivery_date' => 'date',
             'priority' => OrderPriority::class,
             'status' => OrderStatus::class,
         ];

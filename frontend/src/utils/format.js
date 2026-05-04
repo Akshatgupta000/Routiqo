@@ -3,6 +3,12 @@ export function formatKm(km) {
   return `${Number(km).toFixed(2)} km`
 }
 
+export function formatId(id) {
+  if (!id) return '—'
+  const str = String(id)
+  return str.length > 8 ? str.substring(0, 8) : str
+}
+
 export function formatDuration(seconds) {
   if (seconds == null || Number.isNaN(seconds)) return '—'
   const m = Math.floor(seconds / 60)

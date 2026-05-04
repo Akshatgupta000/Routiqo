@@ -47,10 +47,12 @@ class RouteController extends Controller
             : null;
 
         $centerId = $request->validated('delivery_center_id');
+        $date = $request->validated('date');
 
         $comparisons = $this->routeService->generateRoutes(
             $centerId,
-            $departure
+            $departure,
+            $date
         );
 
         $payload = array_map(function (array $row) use ($request) {
@@ -78,7 +80,8 @@ class RouteController extends Controller
 
     public function regenerate(Request $request, mixed $center_id): JsonResponse
     {
-        $comparisons = $this->routeService->regenerateRoutesForCenter($center_id);
+        $date = $request->input('date');
+        $comparisons = $this->routeService->regenerateRoutesForCenter($center_id, null, $date);
 
         $payload = array_map(function (array $row) use ($request) {
             return [

@@ -29,20 +29,18 @@ In the high-stakes world of logistics, efficiency is everything. **RouteOps** tr
 - **Dynamic Hub Capture**: Intelligent "Hub Stealing" logic where centers can automatically capture nearby unassigned orders if they fall within their optimized zone.
 
 ### 🛣️ Advanced Route Optimization
-- **Multi-Profile Optimization**:
-  - **Shortest Distance**: Minimizes total mileage using a nearest-neighbor based tour builder.
-  - **Fastest Time**: Optimizes for delivery speed, accounting for vehicle average speed and per-stop service time.
+- **Shortest Distance Focus**: Exclusively optimizes for the most efficient path, minimizing total fleet mileage via a rigorous nearest-neighbor tour builder.
 - **OSRM Integration**: Fetches high-fidelity road geometries and real-world travel estimates from the Open Source Routing Machine.
 
 ### 📦 Smart Fleet Management
 - **Balanced Load Distribution**: Automatically clusters orders based on individual vehicle capacity.
 - **Capacity Fallback**: "Last vehicle takes all" logic ensures no order is left behind even if the fleet is near capacity.
-- **Fleet Simulation**: A high-performance map playback system (100ms intervals) that simulates vehicle movement along the generated routes.
+- **Dynamic Fleet Simulation**: A high-performance map playback system that simulates vehicle movement. Markers dynamically update color status in real-time as the vehicle passes them sequentially.
 
 ### 🎨 Modern, Map-First UI
 - **3-Column Architecture**:
-  - **Navigation Sidebar**: Quick access to Fleet, Orders, and Routes.
-  - **Interactive Leaflet Map**: Central command view with floating controls and real-time overlays.
+  - **Navigation Sidebar**: Quick access to Fleet, Orders, and Routes with prominent delivery center controls.
+  - **Interactive Leaflet Map**: Central command view featuring clean popups, hover tooltips for short IDs, and smart auto-zoom handling.
   - **Dynamic Right Panel**: Tab-based management for optimization settings, order queues, and active route details.
 - **Responsive & Dark Mode**: Built with Tailwind CSS 4 for a premium look and feel across all devices.
 

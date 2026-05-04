@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import Card from '../UI/Card'
+import { formatId } from '../../utils/format'
 import { useApp } from '../../context/AppContext'
+import * as api from '../../services/api'
 
 export default function CenterOrdersPanel({ centerId }) {
-  const { orders, vehicles } = useApp()
+  const { orders, vehicles, generateRoutesAction, isSimulating, startFleetSimulation, toast } = useApp()
   const [activeTab, setActiveTab] = useState('orders')
 
   const centerOrders = useMemo(() => {
@@ -66,7 +68,7 @@ export default function CenterOrdersPanel({ centerId }) {
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                 {centerOrders.map((o) => (
                   <tr key={o.id} className="text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
-                    <td className="px-4 py-2 font-mono text-zinc-500">#{o.id}</td>
+                    <td className="px-4 py-2 font-mono text-zinc-500">#{formatId(o.id)}</td>
                     <td className="px-4 py-2 truncate max-w-[120px]" title={o.address}>
                       {o.address}
                     </td>
@@ -104,11 +106,35 @@ export default function CenterOrdersPanel({ centerId }) {
                     <td className="px-4 py-2 font-bold">{v.name}</td>
                     <td className="px-4 py-2 font-mono text-zinc-500">{v.vehicle_number}</td>
                     <td className="px-4 py-2 text-right">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${
-                        v.is_available ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      <button 
+                        onClick={async () => {
+                          try {
+                            const newStatus = !v.is_available
+                            await api.updateVehicle(v.id, { is_available: newStatus })
+                            
+                            const wasSimulating = isSimulating
+                            
+                            // Let the user know what's happening
+                            toast(`Vehicle ${v.name} is now ${newStatus ? 'Available' : 'Busy'}. Regenerating routes...`)
+                            
+                            // Regenerate routes automatically with the new fleet availability
+                            await generateRoutesAction(centerId)
+                            
+                            if (wasSimulating) {
+                               // Brief pause to let state settle before auto-resuming simulation
+                               setTimeout(() => {
+                                  startFleetSimulation()
+                               }, 500)
+                            }
+                          } catch (e) {
+                            toast('Failed to update vehicle status', 'error')
+                          }
+                        }}
+                        className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase transition-transform hover:scale-105 active:scale-95 ${
+                        v.is_available ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200'
                       }`}>
                         {v.is_available ? 'Available' : 'Busy'}
-                      </span>
+                      </button>
                     </td>
                   </tr>
                 ))}

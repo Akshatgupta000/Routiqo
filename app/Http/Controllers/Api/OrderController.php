@@ -34,8 +34,10 @@ class OrderController extends Controller
             }
         }
 
+        $date = $request->query('date');
+
         return OrderResource::collection(
-            $this->orders->paginateWithFilters($perPage, $status)
+            $this->orders->paginateWithFilters($perPage, $status, $date)
         );
     }
 
@@ -79,5 +81,32 @@ class OrderController extends Controller
         }
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Return order counts grouped by delivery_date for a given month.
+     * GET /api/orders/date-counts?year=2026&month=5
+     */
+    public function dateCounts(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $year = (int) $request->query('year', now()->year);
+        $month = (int) $request->query('month', now()->month);
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end = sprintf('%04d-%02d-%02d', $year, $month, cal_days_in_month(CAL_GREGORIAN, $month, $year));
+
+        $orders = \App\Models\Order::query()
+            ->whereBetween('delivery_date', [$start, $end])
+            ->get()
+            ->groupBy(function ($order) {
+                $date = $order->delivery_date;
+                if ($date instanceof \Illuminate\Support\Carbon) {
+                    return $date->format('Y-m-d');
+                }
+                return (string) $date;
+            })
+            ->map->count();
+
+        return response()->json($orders);
     }
 }

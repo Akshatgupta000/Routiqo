@@ -55,6 +55,11 @@ export async function getOrders(params = {}) {
   return data
 }
 
+export async function getOrderDateCounts(year, month) {
+  const { data } = await client.get('/orders/date-counts', { params: { year, month } })
+  return data
+}
+
 export async function createOrder(payload) {
   const { data } = await client.post('/orders', payload)
   return data
@@ -125,8 +130,8 @@ export async function getRoute(id) {
   return data
 }
 
-export async function regenerateRoutes(centerId) {
-  const { data } = await client.post(`/routes/regenerate/${centerId}`)
+export async function regenerateRoutes(centerId, payload = {}) {
+  const { data } = await client.post(`/routes/regenerate/${centerId}`, payload)
   return data
 }
 

@@ -15,11 +15,17 @@ class OrderService
     public function __construct(
         private readonly OrderRepositoryInterface $orders,
         private readonly DeliveryCenterRepositoryInterface $centers,
-        private readonly ServiceZoneService $zoneService
+        private readonly ServiceZoneService $zoneService,
+        private readonly GeocodingService $geocodingService
     ) {}
 
     public function createOrder(array $data): Order
     {
+        // Geocode address to lat/lng internally (user never supplies coordinates)
+        $geo = $this->geocodingService->geocode($data['address']);
+        $data['latitude'] = $geo['lat'];
+        $data['longitude'] = $geo['lng'];
+
         $center = $this->resolveNearestCenter((float) $data['latitude'], (float) $data['longitude']);
         
         $data['delivery_center_id'] = $center?->id;

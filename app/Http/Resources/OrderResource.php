@@ -15,6 +15,7 @@ class OrderResource extends JsonResource
             'address' => $this->address,
             'latitude' => (float) $this->latitude,
             'longitude' => (float) $this->longitude,
+            'delivery_date' => $this->delivery_date?->format('Y-m-d'),
             'delivery_center_id' => $this->delivery_center_id,
             'vehicle_id' => $this->vehicle_id,
             'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,

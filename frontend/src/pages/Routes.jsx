@@ -6,6 +6,7 @@ import { formatDuration, formatKm } from '../utils/format'
 import { useApp } from '../context/AppContext'
 import * as api from '../services/api'
 import { useNavigate } from 'react-router-dom'
+import { formatId } from '../utils/format'
 
 export default function Routes() {
   const {
@@ -22,7 +23,7 @@ export default function Routes() {
     : routesList
 
   const columns = [
-    { key: 'route_id', label: 'ID', render: (r) => r.route_id ?? r.id },
+    { key: 'route_id', label: 'ID', render: (r) => formatId(r.route_id ?? r.id) },
     {
       key: 'profile',
       label: 'Profile',

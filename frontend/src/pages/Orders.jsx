@@ -9,9 +9,10 @@ import { useApp } from '../context/AppContext'
 import * as api from '../services/api'
 import AddCenterModal from '../components/Forms/AddCenterModal'
 import AddVehicleModal from '../components/Forms/AddVehicleModal'
+import { formatId } from '../utils/format'
 
 export default function Orders() {
-  const { centers, orders, vehicles, refreshOrders, refreshRoutes, refreshVehicles, toast } = useApp()
+  const { centers, orders, vehicles, refreshOrders, refreshRoutes, refreshVehicles, toast, selectedDate } = useApp()
   const [filter, setFilter] = useState('')
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState(false)
@@ -33,8 +34,9 @@ export default function Orders() {
   }, [filter, refreshOrders])
 
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'id', label: 'ID', render: (r) => `#${formatId(r.id)}` },
     { key: 'address', label: 'Address' },
+    { key: 'delivery_date', label: 'Date', render: (r) => r.delivery_date || '—' },
     {
       key: 'priority',
       label: 'Priority',
@@ -251,17 +253,32 @@ export default function Orders() {
       </div>
 
       <Card className="mb-4">
-        <label className="text-xs font-semibold uppercase text-zinc-500">Filter status</label>
-        <select
-          className="mt-2 w-full max-w-xs rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="pending">Pending</option>
-          <option value="assigned">Assigned</option>
-          <option value="delivered">Delivered</option>
-        </select>
+        <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="text-xs font-semibold uppercase text-zinc-500">Filter status</label>
+            <select
+              className="mt-2 w-full max-w-xs rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="">All</option>
+              <option value="pending">Pending</option>
+              <option value="assigned">Assigned</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase text-zinc-500">Delivery date</label>
+            <div className="mt-2 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+              <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="font-medium">
+                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
+        </div>
       </Card>
 
       {pageLoading ? (

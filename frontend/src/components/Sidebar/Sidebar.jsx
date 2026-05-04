@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import Card from '../UI/Card'
 import Button from '../UI/Button'
+import CalendarPicker from '../UI/CalendarPicker'
 import { useApp } from '../../context/AppContext'
 import { formatDuration, formatKm } from '../../utils/format'
 import AddCenterModal from '../Forms/AddCenterModal'
@@ -20,8 +21,11 @@ export default function Sidebar() {
     toggleTheme,
     theme,
     centers,
+    orders,
     selectedCenterId,
     setSelectedCenterId,
+    selectedDate,
+    setSelectedDate,
     refreshCenters,
     setActiveMultiRoutes,
     setActiveRouteBase,
@@ -64,7 +68,7 @@ export default function Sidebar() {
         </Button>
       </div>
 
-      <nav className="flex flex-1 flex-row flex-wrap gap-1 p-3 md:flex-col md:flex-nowrap">
+      <nav className="flex flex-row flex-wrap gap-1 p-3 md:flex-col md:flex-nowrap">
         <NavLink to="/" end className={linkClass}>
           <span className="text-lg">⌖</span> Dashboard
         </NavLink>
@@ -79,27 +83,36 @@ export default function Sidebar() {
         </NavLink>
       </nav>
 
+      {/* Compact iOS Calendar Picker */}
+      <div className="flex-1 overflow-y-auto px-3 pb-2">
+        <CalendarPicker
+          value={selectedDate}
+          onChange={setSelectedDate}
+          orderCount={orders.length}
+          refreshKey={orders.length}
+        />
+      </div>
+
       <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800">
-        <div className="mb-1 flex items-center justify-between">
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+        <div className="mb-1.5 flex items-center justify-between">
+          <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500">
             Delivery center
           </label>
           <button
             type="button"
-            className="text-[10px] font-bold uppercase text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            className="text-xs font-bold uppercase text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
             onClick={() => setAddCenterOpen(true)}
           >
             + Add New
           </button>
         </div>
-        <div className="flex gap-2 mb-3">
+        <div className="flex gap-2">
           <select
-            className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-base font-medium text-zinc-900 shadow-md dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             value={selectedCenterId ?? ''}
             onChange={(e) => {
               const id = e.target.value || null
               setSelectedCenterId(id)
-              // Clear routes when selecting via dropdown as per user request
               setActiveMultiRoutes([])
               setActiveRouteBase(null)
             }}
@@ -113,17 +126,17 @@ export default function Sidebar() {
           </select>
           
           {selectedCenterId && (
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               <button
                 title="Edit Hub"
-                className="flex items-center justify-center w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
+                className="flex items-center justify-center w-[46px] h-[46px] rounded-xl bg-zinc-100 dark:bg-zinc-800 text-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
                 onClick={() => setEditCenterOpen(true)}
               >
                 ✎
               </button>
               <button
                 title="Delete Hub"
-                className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
+                className="flex items-center justify-center w-[46px] h-[46px] rounded-xl bg-red-50 dark:bg-red-900/20 text-lg text-red-600 hover:bg-red-100"
                 onClick={handleDeleteCenter}
               >
                 ✕
@@ -131,7 +144,6 @@ export default function Sidebar() {
             </div>
           )}
         </div>
-
       </div>
 
       <AddCenterModal open={addCenterOpen} onClose={() => setAddCenterOpen(false)} />

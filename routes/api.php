@@ -12,6 +12,7 @@ Route::patch('/centers/{id}', [DeliveryCenterController::class, 'update']);
 Route::delete('/centers/{id}', [DeliveryCenterController::class, 'destroy']);
 
 Route::post('/orders', [OrderController::class, 'store']);
+Route::get('/orders/date-counts', [OrderController::class, 'dateCounts']);
 Route::get('/orders', [OrderController::class, 'index']);
 Route::patch('/orders/{id}', [OrderController::class, 'update']);
 Route::post('/orders/{id}/assign', [OrderController::class, 'assign']);
