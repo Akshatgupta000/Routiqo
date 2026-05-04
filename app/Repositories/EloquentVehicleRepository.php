@@ -52,4 +52,9 @@ class EloquentVehicleRepository implements VehicleRepositoryInterface
 
         return $vehicle->fresh();
     }
+
+    public function delete(Vehicle $vehicle): void
+    {
+        $vehicle->delete();
+    }
 }

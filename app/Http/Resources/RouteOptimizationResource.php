@@ -26,7 +26,7 @@ class RouteOptimizationResource extends JsonResource
 
                 return [
                     'sequence' => (int) $stop->sequence,
-                    'order_id' => (int) $stop->order_id,
+                    'order_id' => $stop->order_id,
                     'latitude' => $order ? (float) $order->latitude : 0.0,
                     'longitude' => $order ? (float) $order->longitude : 0.0,
                     'eta' => $stop->estimated_arrival_time !== null
@@ -41,17 +41,17 @@ class RouteOptimizationResource extends JsonResource
         $center = $this->deliveryCenter;
 
         return [
-            'route_id' => (int) $this->id,
-            'delivery_center' => [
-                'id' => (int) $center->id,
+            'route_id' => $this->id,
+            'delivery_center' => $center ? [
+                'id' => $center->id,
                 'name' => (string) $center->name,
                 'latitude' => (float) $center->latitude,
                 'longitude' => (float) $center->longitude,
-            ],
-            'vehicle' => [
-                'id' => (int) $this->vehicle->id,
+            ] : null,
+            'vehicle' => $this->vehicle ? [
+                'id' => $this->vehicle->id,
                 'name' => (string) $this->vehicle->name,
-            ],
+            ] : null,
             'total_distance' => round((float) $this->total_distance, 3),
             'total_time' => (int) $this->total_time,
             'stops' => $stops,

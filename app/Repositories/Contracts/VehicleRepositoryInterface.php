@@ -18,4 +18,6 @@ interface VehicleRepositoryInterface
     public function create(array $data): Vehicle;
 
     public function update(Vehicle $vehicle, array $data): Vehicle;
+
+    public function delete(Vehicle $vehicle): void;
 }

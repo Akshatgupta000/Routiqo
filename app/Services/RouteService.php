@@ -53,6 +53,9 @@ class RouteService
         $comparisons = [];
 
         foreach ($centers as $center) {
+            // Prevent duplicates: clear existing planned routes for this center first
+            $this->clearPlannedRoutesInternal($center->id);
+
             // Auto-capture unassigned orders in the center's area before generating
             $this->captureNearbyOrders($center);
 
@@ -124,25 +127,37 @@ class RouteService
 
         Log::info('route.regenerate.start', ['delivery_center_id' => $deliveryCenterId]);
 
+        $this->clearPlannedRoutesInternal($deliveryCenterId);
+
+        return $this->generateRoutes($deliveryCenterId, $departureAt);
+    }
+
+    /**
+     * Internal helper to clear planned routes and reset their orders/vehicles.
+     */
+    private function clearPlannedRoutesInternal(mixed $deliveryCenterId): void
+    {
         DB::transaction(function () use ($deliveryCenterId): void {
             $planned = $this->routes->plannedRoutesForCenter($deliveryCenterId);
-            $orderIds = $planned->flatMap(fn (DeliveryRoute $route) => $route->routeStops->pluck('order_id'))->unique()->values()->all();
-
-            $this->orders->revertAssignedToPending($orderIds);
 
             foreach ($planned as $route) {
-                $this->forgetRouteCache($route->id);
+                // Unassign from vehicle but keep status (e.g. Assigned or Delivered)
+                foreach ($route->routeStops as $stop) {
+                    if ($stop->order) {
+                        $this->orders->update($stop->order, [
+                            'vehicle_id' => null,
+                        ]);
+                    }
+                }
                 
                 // Mark vehicle as available again
                 if ($route->vehicle) {
-                    $route->vehicle->update(['is_available' => true]);
+                    $route->vehicle->update(['is_available' => true, 'current_load' => 0]);
                 }
                 
                 $this->routes->deleteRoute($route);
             }
         });
-
-        return $this->generateRoutes($deliveryCenterId, $departureAt);
     }
 
     public function startRoute(mixed $routeId): DeliveryRoute
@@ -585,30 +600,40 @@ class RouteService
     }
     private function captureNearbyOrders(DeliveryCenter $center, float $radiusKm = 10.0): void
     {
-        // Find all pending orders that are NOT yet assigned to any center
-        $unassigned = Order::query()
-            ->where('status', OrderStatus::Pending)
-            ->whereNull('delivery_center_id')
+        $zoneService = app(\App\Services\ServiceZoneService::class);
+        $zone = \App\Models\ServiceZone::where('delivery_center_id', $center->id)->first();
+
+        // If no specific zone exists, we can't capture strictly.
+        if (!$zone) return;
+
+        // Find all pending/assigned orders that are NOT already in this center
+        $candidates = Order::query()
+            ->whereIn('status', [OrderStatus::Pending, OrderStatus::Assigned])
+            ->where('delivery_center_id', '!=', $center->id)
             ->get();
 
-        foreach ($unassigned as $order) {
-            $dist = \App\Helpers\DistanceHelper::kmBetween(
-                (float) $center->latitude,
-                (float) $center->longitude,
-                (float) $order->latitude,
-                (float) $order->longitude
-            );
+        foreach ($candidates as $order) {
+            // Check if order is physically inside this center's Voronoi zone
+            if ($zoneService->isPointInPolygon((float)$order->latitude, (float)$order->longitude, $zone->polygon_coordinates)) {
+                
+                // Safety check: don't steal if it's already in an InProgress route
+                if ($order->status === OrderStatus::Assigned) {
+                    $stop = $order->routeStop;
+                    if ($stop && $stop->deliveryRoute && $stop->deliveryRoute->status === RouteStatus::InProgress) {
+                        continue; 
+                    }
+                }
 
-            if ($dist <= $radiusKm) {
+                // Re-assign to this center
                 $this->orders->update($order, [
                     'delivery_center_id' => $center->id,
-                    'status' => OrderStatus::Assigned,
+                    'status' => OrderStatus::Pending,
+                    'vehicle_id' => null,
                 ]);
-                
-                Log::info('order.captured', [
+
+                Log::info('order.captured.voronoi', [
                     'order_id' => $order->id,
-                    'center_id' => $center->id,
-                    'distance_km' => $dist
+                    'center_id' => $center->id
                 ]);
             }
         }

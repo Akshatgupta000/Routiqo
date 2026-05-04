@@ -10,6 +10,7 @@ import {
 import * as api from '../services/api'
 import { computeVehiclePosition } from '../utils/routeMap'
 import { buildPlaybackPathForRoute } from '../utils/simplePlaybackPath'
+import { Delaunay } from 'd3-delaunay'
 
 export const AppContext = createContext(null)
 
@@ -60,6 +61,19 @@ export function AppProvider({ children }) {
   const [routePlaybackStep, setRoutePlaybackStep] = useState({})
   const playbackPathsRef = useRef({})
   const playbackIntervalRef = useRef(null)
+  const [serviceZones, setServiceZones] = useState([])
+  const [showZones, setShowZones] = useState(true)
+
+  const refreshZones = useCallback(async () => {
+    try {
+      const data = await api.getZones()
+      setServiceZones(Array.isArray(data) ? data : [])
+      return data
+    } catch (e) {
+      console.error('Failed to fetch zones', e)
+      return []
+    }
+  }, [])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -130,7 +144,7 @@ export function AppProvider({ children }) {
 
         return next
       })
-    }, 180)
+    }, 100)
   }, [clearPlaybackTimer, toast])
 
   useEffect(() => () => clearPlaybackTimer(), [clearPlaybackTimer])
@@ -202,11 +216,62 @@ export function AppProvider({ children }) {
     return uniqueList
   }, [])
 
+  const generateVoronoiZonesAction = useCallback(async () => {
+    if (centers.length < 2) return
+
+    setLoading((l) => ({ ...l, zones: true }))
+    try {
+      const points = centers.map((c) => [Number(c.latitude), Number(c.longitude)])
+      const delaunay = Delaunay.from(points)
+      
+      // Large clipping bounds for city-scale coverage
+      const minLat = Math.min(...points.map(p => p[0])) - 1
+      const maxLat = Math.max(...points.map(p => p[0])) + 1
+      const minLng = Math.min(...points.map(p => p[1])) - 1
+      const maxLng = Math.max(...points.map(p => p[1])) + 1
+      
+      const voronoi = delaunay.voronoi([minLat, minLng, maxLat, maxLng])
+      
+      const zones = []
+      for (let i = 0; i < centers.length; i++) {
+        const polygon = voronoi.cellPolygon(i)
+        if (polygon) {
+          zones.push({
+            hub_id: centers[i].id,
+            polygon: polygon.map((p) => [p[0], p[1]])
+          })
+        }
+      }
+      
+      if (zones.length > 0) {
+        await api.saveZones(zones)
+        await refreshZones()
+      }
+    } catch (e) {
+      console.error('Voronoi generation failed', e)
+    } finally {
+      setLoading((l) => ({ ...l, zones: false }))
+    }
+  }, [centers, refreshZones])
+
+  // Automatically sync zones when hubs change
+  useEffect(() => {
+    if (centers.length >= 2) {
+      void generateVoronoiZonesAction()
+    }
+  }, [centers.length, generateVoronoiZonesAction])
+
   const bootstrap = useCallback(async () => {
     setLoading((l) => ({ ...l, global: true }))
     setBootstrapError(null)
     try {
-      await Promise.all([refreshCenters(), refreshOrders(), refreshVehicles(), refreshRoutes()])
+      await Promise.all([
+        refreshCenters(), 
+        refreshOrders(), 
+        refreshVehicles(), 
+        refreshRoutes(),
+        refreshZones()
+      ])
     } catch (e) {
       const msg = e?.response?.data?.message || e.message || 'Failed to load data'
       setBootstrapError(
@@ -216,7 +281,7 @@ export function AppProvider({ children }) {
     } finally {
       setLoading((l) => ({ ...l, global: false }))
     }
-  }, [refreshCenters, refreshOrders, refreshVehicles, refreshRoutes, toast])
+  }, [refreshCenters, refreshOrders, refreshVehicles, refreshRoutes, refreshZones, toast])
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -287,8 +352,11 @@ export function AppProvider({ children }) {
       
       const comps = data?.comparisons ?? []
       setComparisons(comps)
+      
       if (!comps.length) {
-        toast('No routes were generated.', 'error')
+        setActiveMultiRoutes([])
+        setActiveRouteBase(null)
+        toast('No pending orders in this hub\'s zone.', 'info')
         return
       }
       const allPrimaryRoutes = comps.map(c => 
@@ -468,6 +536,11 @@ export function AppProvider({ children }) {
       resetFleetSimulation,
       resetSelection,
       resetFleetAction,
+      serviceZones,
+      showZones,
+      setShowZones,
+      refreshZones,
+      generateVoronoiZonesAction,
     }),
     [
       theme,
@@ -514,6 +587,10 @@ export function AppProvider({ children }) {
       resetFleetSimulation,
       resetSelection,
       resetFleetAction,
+      serviceZones,
+      showZones,
+      refreshZones,
+      generateVoronoiZonesAction,
     ]
   )
 

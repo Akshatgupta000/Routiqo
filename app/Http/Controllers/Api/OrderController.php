@@ -42,7 +42,7 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): OrderResource
     {
         $order = $this->orderService->createOrder($request->validated());
-        $order->load('deliveryCenter');
+        $order->load(['deliveryCenter', 'vehicle']);
 
         return new OrderResource($order);
     }
@@ -54,7 +54,7 @@ class OrderController extends Controller
         abort_if(! $order, 404);
 
         $order = $this->orderService->updateOrderStatus($order, $request->validated('status'));
-        $order->load('deliveryCenter');
+        $order->load(['deliveryCenter', 'vehicle']);
 
         return new OrderResource($order);
     }

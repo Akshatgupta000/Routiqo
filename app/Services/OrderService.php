@@ -2,14 +2,12 @@
 
 namespace App\Services;
 
-use App\Enums\OrderPriority;
 use App\Enums\OrderStatus;
-use App\Helpers\DistanceHelper;
 use App\Models\DeliveryCenter;
 use App\Models\Order;
+use App\Models\ServiceZone;
 use App\Repositories\Contracts\DeliveryCenterRepositoryInterface;
 use App\Repositories\Contracts\OrderRepositoryInterface;
-use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class OrderService
@@ -17,160 +15,69 @@ class OrderService
     public function __construct(
         private readonly OrderRepositoryInterface $orders,
         private readonly DeliveryCenterRepositoryInterface $centers,
-        private readonly GeocodingService $geocoding,
+        private readonly ServiceZoneService $zoneService
     ) {}
 
-    public function createOrder(array $payload): Order
+    public function createOrder(array $data): Order
     {
-        $lat = $payload['latitude'] ?? null;
-        $lng = $payload['longitude'] ?? null;
-        $address = $payload['address'];
-
-        if ($lat === null || $lng === null) {
-            $coords = $this->geocoding->geocode($address);
-            $lat = $coords['lat'];
-            $lng = $coords['lng'];
-            $address = $coords['display_name'];
-        }
-
-        $priority = isset($payload['priority'])
-            ? OrderPriority::from($payload['priority'])
-            : OrderPriority::Medium;
-
-        $data = [
-            'address' => $address,
-            'latitude' => $lat,
-            'longitude' => $lng,
-            'status' => OrderStatus::Pending,
-            'priority' => $priority,
-        ];
+        $center = $this->resolveNearestCenter((float) $data['latitude'], (float) $data['longitude']);
+        
+        $data['delivery_center_id'] = $center?->id;
+        $data['status'] = $center ? OrderStatus::Assigned : OrderStatus::Pending;
 
         return $this->orders->create($data);
     }
 
-    public function assignOrder(Order $order): Order
-    {
-        if ($order->status !== OrderStatus::Pending) {
-            throw ValidationException::withMessages([
-                'status' => __('Order is already assigned or processed.'),
-            ]);
-        }
-
-        $center = $this->resolveNearestCenter(
-            (float) $order->latitude,
-            (float) $order->longitude
-        );
-
-        // Find available vehicle with lowest load
-        $vehicle = \App\Models\Vehicle::query()
-            ->where('delivery_center_id', $center->id)
-            ->where('is_available', true)
-            ->orderBy('current_load', 'asc')
-            ->first();
-
-        if (!$vehicle) {
-             throw ValidationException::withMessages([
-                'vehicle_id' => [
-                    'code' => 'no_vehicle',
-                    'message' => __('No available vehicles at the nearest delivery center (:center).', ['center' => $center->name]),
-                    'suggestion' => 'create_vehicle',
-                    'center_id' => $center->id
-                ],
-            ]);
-        }
-
-        // Update order
-        $order = $this->orders->update($order, [
-            'delivery_center_id' => $center->id,
-            'vehicle_id' => $vehicle->id,
-            'status' => OrderStatus::Assigned,
-        ]);
-
-        // Update vehicle: set to busy
-        $vehicle->update([
-            'is_available' => false,
-            'current_load' => 1
-        ]);
-
-        return $order;
-    }
-
     public function updateOrderStatus(Order $order, string $status): Order
     {
-        $next = OrderStatus::from($status);
+        $statusEnum = OrderStatus::from($status);
+        
+        return $this->orders->update($order, [
+            'status' => $statusEnum,
+        ]);
+    }
 
-        if ($order->status === OrderStatus::Delivered && $next !== OrderStatus::Delivered) {
+    public function assignOrder(Order|string $order): Order
+    {
+        if (is_string($order)) {
+            $order = $this->orders->find($order);
+        }
+        abort_if(! $order, 404);
+
+        $center = $this->resolveNearestCenter((float) $order->latitude, (float) $order->longitude);
+        if (! $center) {
             throw ValidationException::withMessages([
-                'status' => __('Delivered orders cannot be reverted.'),
+                'address' => 'No delivery zone found for this location.',
             ]);
         }
 
-        $order = $this->orders->update($order, ['status' => $next]);
+        return $this->orders->update($order, [
+            'delivery_center_id' => $center->id,
+            'status' => OrderStatus::Assigned,
+        ]);
+    }
 
-        // If delivered, release the vehicle only if it has no more pending orders in its current route
-        if ($next === OrderStatus::Delivered && $order->vehicle_id) {
-            $remaining = \App\Models\Order::query()
-                ->where('vehicle_id', $order->vehicle_id)
-                ->where('status', '!=', OrderStatus::Delivered)
-                ->where('_id', '!=', $order->id) // Use _id for MongoDB
-                ->count();
+    private function resolveNearestCenter(float $latitude, float $longitude): ?DeliveryCenter
+    {
+        $zones = ServiceZone::all();
 
-            if ($remaining === 0) {
-                $vehicle = \App\Models\Vehicle::find($order->vehicle_id);
-                if ($vehicle) {
-                    $vehicle->update([
-                        'is_available' => true,
-                        'current_load' => 0
-                    ]);
-                }
+        foreach ($zones as $zone) {
+            if ($this->zoneService->isPointInPolygon($latitude, $longitude, $zone->polygon_coordinates)) {
+                return DeliveryCenter::find($zone->delivery_center_id);
             }
         }
 
-        return $order;
-    }
+        // Fallback for system initialization if no zones exist
+        if ($zones->isEmpty()) {
+            $centers = DeliveryCenter::all();
+            if ($centers->isEmpty()) return null;
 
-    private function resolveNearestCenter(float $latitude, float $longitude): DeliveryCenter
-    {
-        /** @var Collection<int, DeliveryCenter> $centers */
-        $centers = $this->centers->all();
-
-        if ($centers->isEmpty()) {
-            throw ValidationException::withMessages([
-                'address' => [
-                    'code' => 'no_center',
-                    'message' => __('No delivery centers available.'),
-                    'suggestion' => 'create_center',
-                    'lat' => $latitude,
-                    'lng' => $longitude
-                ],
-            ]);
+            return $centers->map(function ($c) use ($latitude, $longitude) {
+                $c->dist = \App\Helpers\DistanceHelper::kmBetween($latitude, $longitude, $c->latitude, $c->longitude);
+                return $c;
+            })->sortBy('dist')->first();
         }
 
-        $nearby = $centers->map(function (DeliveryCenter $center) use ($latitude, $longitude) {
-            $dist = DistanceService::calculate(
-                $latitude,
-                $longitude,
-                (float) $center->latitude,
-                (float) $center->longitude
-            );
-            $center->temp_distance = $dist;
-
-            return $center;
-        })->filter(fn ($c) => $c->temp_distance <= 10.0);
-
-        if ($nearby->isEmpty()) {
-            $minDist = $centers->min('temp_distance');
-            throw ValidationException::withMessages([
-                'address' => [
-                    'code' => 'no_center',
-                    'message' => __('Delivery address is too far (nearest center is :dist km away).', ['dist' => round($minDist, 1)]),
-                    'suggestion' => 'create_center',
-                    'lat' => $latitude,
-                    'lng' => $longitude
-                ],
-            ]);
-        }
-
-        return $nearby->sortBy('temp_distance')->first();
+        return null;
     }
 }

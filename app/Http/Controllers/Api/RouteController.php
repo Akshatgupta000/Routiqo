@@ -120,4 +120,30 @@ class RouteController extends Controller
             (new RouteOptimizationResource($route))->toArray($request)
         );
     }
+
+    public function clear(Request $request): JsonResponse
+    {
+        $centerId = $request->input('delivery_center_id');
+        
+        $query = DeliveryRoute::query();
+        if ($centerId) {
+            $query->where('delivery_center_id', $centerId);
+        }
+        
+        // Also revert orders back to pending
+        $routes = $query->get();
+        foreach ($routes as $route) {
+            \App\Models\Order::whereIn('id', $route->routeStops->pluck('order_id'))
+                ->update(['vehicle_id' => null]);
+            
+            // Set vehicles back to available
+            if ($route->vehicle) {
+                $route->vehicle->update(['is_available' => true, 'current_load' => 0]);
+            }
+        }
+
+        $query->delete();
+
+        return response()->json(['message' => 'Routes cleared and orders reverted to pending.']);
+    }
 }

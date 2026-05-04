@@ -23,10 +23,10 @@ export function orderIcon(color = '#ef4444') {
   })
 }
 
-export function numberedStopIcon(n) {
+export function numberedStopIcon(n, color = '#10b981') {
   return L.divIcon({
     className: 'custom-marker-stop',
-    html: `<div class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-xs font-bold text-white shadow-lg">${n}</div>`,
+    html: `<div class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-lg" style="background: ${color}">${n}</div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
   })

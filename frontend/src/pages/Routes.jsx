@@ -90,9 +90,28 @@ export default function Routes() {
           </h1>
           <p className="text-sm text-zinc-500">History and inspection.</p>
         </div>
-        <Button variant="secondary" onClick={regen}>
-          Regenerate center
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            className="text-red-600 hover:bg-red-50" 
+            onClick={async () => {
+              if (window.confirm('Clear all routes and reset orders to pending?')) {
+                try {
+                  await api.clearRoutes()
+                  await refreshRoutes()
+                  toast('All routes cleared.')
+                } catch (e) {
+                  toast('Clear failed', 'error')
+                }
+              }
+            }}
+          >
+            Clear all
+          </Button>
+          <Button variant="secondary" onClick={regen}>
+            Regenerate center
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-4 text-xs text-zinc-500">

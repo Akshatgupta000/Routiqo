@@ -56,11 +56,15 @@ export default function Orders() {
       render: (r) => {
         if (!r.vehicle) return <span className="text-zinc-400 text-xs italic">Unassigned</span>
         return (
-          <div className="flex items-center gap-1.5">
-            <span className="text-base">🚚</span>
-            <span className="font-mono text-xs font-bold tracking-wider text-zinc-800 dark:text-zinc-200">
-              {r.vehicle.vehicle_number || r.vehicle.name}
+          <div className="flex flex-col">
+            <span className="font-semibold text-zinc-900 dark:text-white">
+              {r.vehicle.name}
             </span>
+            {r.vehicle.vehicle_number && (
+              <span className="font-mono text-[10px] tracking-tight text-zinc-500">
+                {r.vehicle.vehicle_number}
+              </span>
+            )}
           </div>
         )
       },

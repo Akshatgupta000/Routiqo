@@ -21,6 +21,8 @@ export default function Dashboard() {
     selectedCenterId,
     activeProfile,
     setActiveProfile,
+    showZones,
+    setShowZones,
   } = useApp()
 
   const ordersOnMap = useMemo(
@@ -59,6 +61,15 @@ export default function Dashboard() {
             <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
               Fleet optimization
             </h2>
+            <div className="flex items-center gap-2">
+               <span className="text-[10px] uppercase font-bold text-zinc-400">Zones</span>
+               <button 
+                 onClick={() => setShowZones(!showZones)}
+                 className={`w-8 h-4 rounded-full transition-colors relative ${showZones ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+               >
+                 <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showZones ? 'left-4.5' : 'left-0.5'}`} />
+               </button>
+            </div>
             <div className="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
               <button
                 type="button"

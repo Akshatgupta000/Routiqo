@@ -19,6 +19,7 @@ class VehicleResource extends JsonResource
             'is_available' => (bool) $this->is_available,
             'average_speed' => (float) $this->average_speed,
             'delivery_center_id' => $this->delivery_center_id,
+            'delivery_center' => DeliveryCenterResource::make($this->whenLoaded('deliveryCenter')),
         ];
     }
 }

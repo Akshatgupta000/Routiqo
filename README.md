@@ -1,135 +1,130 @@
-# 🚚 LogiRoute AI
+# 🚚 RouteOps: Professional Fleet Dispatch & Route Optimization
 
-[![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
-[![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com)
 
-**LogiRoute AI** is a professional, production-ready logistics management platform designed to streamline delivery operations through intelligent route optimization. Built with a modern full-stack architecture, it empowers fleet managers to visualize, simulate, and optimize complex delivery networks in real-time.
-
----
-
-### 📌 Features
-
-- **📍 Dynamic Route Optimization**: Generate the most efficient delivery paths based on "Shortest Distance" or "Fastest Time" profiles using advanced clustering algorithms.
-- **🗺️ Interactive Map Dashboard**: Real-time visualization of delivery centers, orders, and vehicle paths powered by Leaflet.
-- **⚡ Live Route Simulation**: Step-through or auto-play vehicle movements to monitor delivery progress and ETA accuracy.
-- **🚛 Fleet & Center Management**: Comprehensive tools to manage delivery hubs, vehicle capacities, and driver assignments.
-- **📦 Order Lifecycle Tracking**: Monitor orders from pending status through assignment to final delivery.
-- **📊 Performance Analytics**: Insightful metrics on total distance, estimated arrival times, and vehicle utilization.
+**RouteOps** is a high-performance, full-stack logistics management system designed to solve the "Last Mile Delivery" problem. By combining advanced clustering algorithms with real-time map visualization, RouteOps automates the complex task of assigning thousands of orders to specialized vehicle fleets while minimizing total travel distance and delivery time.
 
 ---
 
-### 🛠️ Tech Stack
+## 🌟 Project Overview
 
-| Component | Technology |
-| :--- | :--- |
-| **Frontend** | React 19, Vite, Tailwind CSS 4, React Leaflet, Axios |
-| **Backend** | Laravel 11 (PHP 8.2+), Eloquent ORM, REST API |
-| **Database** | SQLite (Production-ready local storage) |
-| **Icons & UI** | Lucide React, Framer Motion (Micro-animations) |
+In modern logistics, manual dispatching is a bottleneck. **RouteOps** eliminates this inefficiency by providing a dynamic, map-centric dashboard where dispatchers can visualize their entire operations in real-time.
+
+### Real-World Use Case
+Imagine a city-wide grocery delivery service with 5 hubs and 50 riders. RouteOps automatically determines which hub should handle which order and calculates the exact sequence of stops for every rider, ensuring no vehicle is overloaded and every customer gets their delivery via the shortest possible path.
 
 ---
 
-### 📂 Project Structure
+## 🚀 Core Features
 
-```bash
-├── app/                # Laravel Backend (Models, Controllers, Services)
-│   ├── Services/       # Route optimization & clustering logic
-│   └── Repositories/   # Data access layer
-├── frontend/           # React Frontend (Vite + React 19)
-│   ├── src/
-│   │   ├── components/ # Map, Route, and UI components
-│   │   ├── pages/      # Dashboard, Orders, Vehicles, Routes
-│   │   └── context/    # Global State Management (App Context)
-├── database/           # Migrations & Seeders (SQLite)
-├── routes/             # API & Web route definitions
-└── public/             # Static assets & build files
-```
+- **📍 Smart Hub Auto-Assignment**: Orders are dynamically assigned to the "best" delivery center using a weight-based algorithm that considers both geographical proximity and fleet average speeds.
+- **🛣️ Intelligent Route Optimization**: Integration with OSRM (Open Source Routing Machine) to fetch high-fidelity road geometries and travel estimates.
+- **🔄 Dynamic "Hub Stealing"**: A proprietary logic where centers can "capture" nearby orders from other hubs if they can prove a more efficient delivery time, ensuring global fleet optimization.
+- **📦 Vehicle Capacity Management**: Automated clustering that respects individual vehicle payload constraints and volume limits.
+- **🎮 Real-Time Dispatch Simulation**: A smooth, 100ms-interval map playback system that simulates rider movement along generated routes.
+- **🛠️ Comprehensive Fleet Control**: Full CRUD management for vehicles, delivery centers, and orders with a focus on ease of use.
 
 ---
 
-### ⚙️ Installation & Setup
+## 💻 Tech Stack
 
-#### Prerequisites
+### Frontend
+- **React.js**: Functional components with custom hooks for state management.
+- **Leaflet.js**: Interactive map rendering and coordinate handling.
+- **Tailwind CSS**: Modern, responsive UI with dark mode support.
+- **React Router**: Seamless navigation between Dashboard, Fleet, and Order views.
+
+### Backend
+- **Laravel 11**: Robust PHP framework providing a secure and scalable REST API.
+- **MongoDB**: NoSQL database for flexible order/route schemas and high-concurrency support.
+- **OSRM API**: External routing engine for real-world road network calculations.
+
+---
+
+## 🏗️ Architecture
+
+RouteOps follows a decoupled architecture ensuring high availability and separation of concerns.
+
+1. **Client Layer**: React frontend maintains a global `AppContext` to synchronize the map state with fleet data.
+2. **API Layer**: Laravel controllers handle authentication, fleet logic, and route persistence.
+3. **Service Layer**: Dedicated `RouteService` and `DistanceService` encapsulate the mathematical heavy lifting.
+4. **Data Layer**: MongoDB stores dynamic order statuses and complex polyline geometries.
+
+**Data Flow:**
+`Map Interaction` → `API Request` → `RouteService (Clustering)` → `OSRM Fetch (Geometry)` → `MongoDB Save` → `Frontend Refresh (Socket/Polling)`
+
+---
+
+## ⚙️ Installation Guide
+
+### Prerequisites
 - PHP 8.2+ & Composer
-- Node.js (v18+) & NPM
-- SQLite3
+- Node.js 20+ & NPM
+- MongoDB Instance (Local or Atlas)
 
-#### 1. Backend Setup (Laravel)
+### 1. Clone & Setup Backend
 ```bash
-# Clone the repository
-git clone https://github.com/[YOUR_USERNAME]/[REPO_NAME].git
-cd [REPO_NAME]
-
-# Install PHP dependencies
+git clone https://github.com/Akshatgupta000/RouteOps.git
+cd RouteOps
 composer install
-
-# Configure Environment
 cp .env.example .env
 php artisan key:generate
-
-# Setup Database (SQLite)
-touch database/database.sqlite
-php artisan migrate --seed
-
-# Start Laravel Server
-php artisan serve
 ```
 
-#### 2. Frontend Setup (React)
+### 2. Configure MongoDB
+Update your `.env` with your MongoDB credentials:
+```env
+DB_CONNECTION=mongodb
+DB_HOST=127.0.0.1
+DB_PORT=27017
+DB_DATABASE=routeops
+```
+
+### 3. Setup Frontend
 ```bash
-# Navigate to frontend directory
 cd frontend
-
-# Install NPM dependencies
 npm install
+cp .env.example .env.local
+```
 
-# Start Development Server
+### 4. Run the Application
+**Terminal 1 (Backend):**
+```bash
+php artisan serve
+```
+**Terminal 2 (Frontend):**
+```bash
 npm run dev
 ```
 
 ---
 
-### 🚀 Usage
+## 🔌 API Endpoints (Selected)
 
-1. **Dashboard**: View all delivery centers and active orders on the map.
-2. **Generate Routes**: Select a delivery center and click **"Generate Route"**. Choose between "Shortest" or "Fastest" paths.
-3. **Simulation**: Click **"Start Route"** on an optimized path to begin the delivery simulation.
-4. **Management**: Use the sidebar navigation to add new Vehicles, Delivery Centers, or Orders.
-
----
-
-### 📸 Screenshots / Demo
-
-> [!NOTE]
-> *Dashboard previews and video demos can be added here once the application is deployed.*
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/orders` | Fetch all pending and assigned orders |
+| `POST` | `/api/routes/generate` | Trigger fleet-wide route optimization |
+| `POST` | `/api/vehicles` | Register a new vehicle to the fleet |
+| `DELETE` | `/api/vehicles/{id}` | Remove a vehicle and cleanup its routes |
+| `PATCH` | `/api/orders/{id}/assign` | Manually override order-hub assignment |
 
 ---
 
-### 🔮 Future Improvements
+## 📈 Future Improvements
 
-- [ ] **AI-Powered Traffic Integration**: Integrate real-time traffic APIs (Google Maps/Mapbox) for dynamic routing.
-- [ ] **Mobile App for Drivers**: Dedicated React Native app for real-time delivery confirmations and GPS tracking.
-- [ ] **Advanced Analytics**: Detailed reporting on fuel savings and driver performance metrics.
-- [ ] **Multi-Carrier Support**: Assign routes to third-party logistics providers automatically.
-
----
-
-### 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the Branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
+- [ ] **AI-Powered Demand Prediction**: Use historical data to pre-position vehicles in high-demand zones.
+- [ ] **Mobile Rider App**: Native app for riders to update delivery status in real-time.
+- [ ] **Traffic-Aware Routing**: Integrate live traffic data to adjust ETAs dynamically.
+- [ ] **Multi-Depot VRP**: Solve cross-hub optimization for packages traveling between cities.
 
 ---
 
-### 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+## 👨–💻 Author
+**Akshat Gupta**
+*Full-Stack Engineer & Logistics Enthusiast*
 
 ---
-<p align="center">Made with ❤️ for Logistics Efficiency</p>
+*Developed with ❤️ for the future of logistics.*

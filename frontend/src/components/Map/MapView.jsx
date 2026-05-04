@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip, Polygon } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { centerIcon, orderIcon, numberedStopIcon, vehicleIcon } from './mapIcons'
@@ -63,14 +63,14 @@ function FlyToFocus({ focus }) {
 export default function MapView({
   showOrderPins = true,
 }) {
-  const { 
-    mapFocus, 
-    draftDeliveries, 
-    routesList, 
+  const {
+    mapFocus,
+    draftDeliveries,
+    routesList,
     selectedCenterId,
-    setSelectedCenterId, 
-    generateRoutesAction, 
-    loading, 
+    setSelectedCenterId,
+    generateRoutesAction,
+    loading,
     simulationPhase,
     toast,
     setMapFocus,
@@ -87,6 +87,8 @@ export default function MapView({
     refreshOrders,
     routePlaybackCoords,
     routePlaybackStep,
+    serviceZones,
+    showZones,
   } = useApp()
 
   const handleOrderClick = async (order) => {
@@ -113,7 +115,7 @@ export default function MapView({
       }
 
       setSelectedCenterId(nearest.id)
-      
+
       // Auto-zoom to center
       setMapFocus({
         lat: Number(nearest.latitude),
@@ -127,7 +129,7 @@ export default function MapView({
           await api.assignOrder(order.id)
           await refreshOrders() // Sync local state
         }
-        
+
         toast(`Hub: ${nearest.name} (${nearest.dist.toFixed(1)} km)`)
         generateRoutesAction(nearest.id)
       } catch (err) {
@@ -180,6 +182,25 @@ export default function MapView({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {showZones && serviceZones.map((zone, idx) => {
+          const color = ROUTE_COLORS[idx % ROUTE_COLORS.length].primary
+          return (
+            <Polygon
+              key={`zone-${zone._id}-${idx}`}
+              positions={zone.polygon_coordinates}
+              pathOptions={{
+                fillColor: color,
+                fillOpacity: 0.1,
+                color: color,
+                weight: 1,
+                dashArray: '5, 5'
+              }}
+            >
+              <Tooltip sticky>Zone: {zone.delivery_center?.name || 'Loading...'}</Tooltip>
+            </Polygon>
+          )
+        })}
         <MapClickHandler onMapClick={() => setActiveOrderId(null)} />
         {bounds && <FitBounds bounds={bounds} />}
         {(simulationPhase === 'running' || simulationPhase === 'paused') && (
@@ -234,7 +255,7 @@ export default function MapView({
                   Center #{c.id}
                 </Popup>
               </Marker>
-              
+
               {/* Show all bold blue OSRM routes belonging to this center when clicked */}
               {selectedCenterId === c.id && routesList
                 .filter((r) => {
@@ -335,11 +356,10 @@ export default function MapView({
           )
         })}
 
-        {showOrderPins &&
-          orders.map((o) => {
+        {showOrderPins && orders.filter(o => o.status !== 'delivered').map((o) => {
             const position = stopLatLng(o)
             if (position[0] === 0 && position[1] === 0) return null // Skip invalid coords
-            
+
             const color = o.status === 'assigned' ? '#10b981' : o.status === 'pending' ? '#ef4444' : '#71717a'
             return (
               <Marker
@@ -395,28 +415,37 @@ export default function MapView({
           </Marker>
         ))}
 
-        {activeRoute?.stops
-          ?.slice()
-          .sort((a, b) => a.sequence - b.sequence)
-          .map((s) => {
+        {/* Render numbered stops for all active routes */}
+        {(activeMultiRoutes?.length > 0 ? activeMultiRoutes : (activeRoute ? [activeRoute] : []))
+          .filter(r => r.status !== 'completed')
+          .map((route, routeIdx) => {
+          const colors = ROUTE_COLORS[routeIdx % ROUTE_COLORS.length]
+          return route.stops?.map((s) => {
             const [lat, lng] = stopLatLng(s)
             return (
               <Marker
-                key={`s-${s.sequence}-${s.order_id}`}
+                key={`s-${route.route_id || 'unassigned'}-${routeIdx}-${s.sequence}-${s.order_id}`}
                 position={[lat, lng]}
-                icon={numberedStopIcon(s.sequence)}
+                icon={numberedStopIcon(s.sequence, colors.primary)}
               >
                 <Popup>
-                  Stop {s.sequence} · Order #{s.order_id}
-                  <br />
-                  ETA: {s.eta || '—'}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                      Vehicle: {route.vehicle?.name || 'Unknown'}
+                    </span>
+                    <strong className="text-sm">Stop {s.sequence} · Order #{s.order_id}</strong>
+                    <span className="text-xs text-zinc-600 dark:text-zinc-400">ETA: {s.eta || '—'}</span>
+                  </div>
                 </Popup>
               </Marker>
             )
-          })}
+          })
+        })}
 
         {/* Active Multi-Route Rendering */}
-        {(activeMultiRoutes?.length > 0 ? activeMultiRoutes : (activeRoute ? [activeRoute] : [])).map((route, idx) => {
+        {(activeMultiRoutes?.length > 0 ? activeMultiRoutes : (activeRoute ? [activeRoute] : []))
+          .filter(r => r.status !== 'completed')
+          .map((route, idx) => {
           const coords = extractRouteCoordinates(route)
           if (coords.length < 2) return null
           const colors = ROUTE_COLORS[idx % ROUTE_COLORS.length]

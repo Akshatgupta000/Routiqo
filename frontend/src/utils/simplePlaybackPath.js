@@ -35,7 +35,7 @@ export function buildPlaybackPathForRoute(route, centers = []) {
   /** Densify segment so “Simulate movement” visibly steps along the route. */
   /** @type {Array<[number, number]>} */
   const dense = []
-  const perSegment = 10
+  const perSegment = 20
   for (let i = 0; i < anchors.length - 1; i++) {
     const a = anchors[i]
     const b = anchors[i + 1]

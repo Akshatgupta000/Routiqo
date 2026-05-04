@@ -64,8 +64,40 @@ class VehicleController extends Controller
         if ($centerId) {
             $query->where('delivery_center_id', $centerId);
         }
+
+        // Reset vehicles
         $query->update(['is_available' => true, 'current_load' => 0]);
         
-        return response()->json(['message' => 'Fleet reset successful']);
+        // Delete planned and in-progress routes for these vehicles/center
+        $routeQuery = \App\Models\DeliveryRoute::query();
+        if ($centerId) {
+            $routeQuery->where('delivery_center_id', $centerId);
+        }
+        
+        $routes = $routeQuery->whereIn('status', [\App\Enums\RouteStatus::Planned, \App\Enums\RouteStatus::InProgress])->get();
+        foreach ($routes as $route) {
+            // Unassign from vehicle but keep current status
+            \App\Models\Order::whereIn('id', $route->routeStops->pluck('order_id'))
+                ->update(['vehicle_id' => null]);
+            $route->delete();
+        }
+        
+        return response()->json(['message' => 'Fleet and active routes reset successful']);
+    }
+
+    public function destroy(string $id): \Illuminate\Http\JsonResponse
+    {
+        $vehicle = $this->vehicles->find($id);
+
+        if ($vehicle) {
+            // Delete associated planned routes to avoid orphan routes
+            \App\Models\DeliveryRoute::where('vehicle_id', $id)
+                ->where('status', \App\Enums\RouteStatus::Planned)
+                ->delete();
+
+            $this->vehicles->delete($vehicle);
+        }
+
+        return response()->json(null, 204);
     }
 }

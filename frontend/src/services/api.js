@@ -85,6 +85,21 @@ export async function resetFleet(payload = {}) {
   return data
 }
 
+export async function deleteVehicle(id) {
+  const { data } = await client.delete(`/vehicles/${id}`)
+  return data
+}
+
+export async function getZones() {
+  const { data } = await client.get('/zones')
+  return data
+}
+
+export async function saveZones(zones) {
+  const { data } = await client.post('/zones/generate', { zones })
+  return data
+}
+
 export async function generateRoute(payload = {}) {
   const { data } = await client.post('/routes/generate', payload)
   return data
@@ -102,6 +117,11 @@ export async function getRoute(id) {
 
 export async function regenerateRoutes(centerId) {
   const { data } = await client.post(`/routes/regenerate/${centerId}`)
+  return data
+}
+
+export async function clearRoutes(payload = {}) {
+  const { data } = await client.delete('/routes/clear', { data: payload })
   return data
 }
 

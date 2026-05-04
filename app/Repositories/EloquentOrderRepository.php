@@ -12,7 +12,7 @@ class EloquentOrderRepository implements OrderRepositoryInterface
 {
     public function paginateWithFilters(int $perPage, ?OrderStatus $status = null): LengthAwarePaginator
     {
-        $query = Order::query()->with('deliveryCenter')->orderByDesc('_id');
+        $query = Order::query()->with(['deliveryCenter', 'vehicle'])->orderByDesc('_id');
 
         if ($status instanceof OrderStatus) {
             $query->where('status', $status);

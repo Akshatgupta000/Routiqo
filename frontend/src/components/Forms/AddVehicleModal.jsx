@@ -123,13 +123,20 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
             />
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.is_available}
-            onChange={(e) => setForm((f) => ({ ...f, is_available: e.target.checked }))}
-          />
-          Available for routing
+        <label className="flex items-center gap-3 text-sm cursor-pointer select-none">
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={form.is_available}
+              onChange={(e) => setForm((f) => ({ ...f, is_available: e.target.checked }))}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5 bg-zinc-300 rounded-full peer-checked:bg-emerald-500 transition-colors dark:bg-zinc-600" />
+            <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+          </div>
+          <span className={form.is_available ? 'text-emerald-600 font-semibold' : 'text-red-500 font-semibold'}>
+            {form.is_available ? 'Available for routing' : 'Unavailable'}
+          </span>
         </label>
       </form>
     </Modal>

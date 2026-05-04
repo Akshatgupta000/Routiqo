@@ -19,9 +19,15 @@ Route::post('/vehicles', [VehicleController::class, 'store']);
 Route::get('/vehicles', [VehicleController::class, 'index']);
 Route::patch('/vehicles/{id}', [VehicleController::class, 'update']);
 Route::post('/vehicles/reset-fleet', [VehicleController::class, 'resetFleet']);
+Route::delete('/vehicles/{id}', [VehicleController::class, 'destroy']);
 
 Route::post('/routes/generate', [RouteController::class, 'generate']);
 Route::post('/routes/regenerate/{center_id}', [RouteController::class, 'regenerate']);
+
+Route::get('/zones', [\App\Http\Controllers\Api\ServiceZoneController::class, 'index']);
+Route::post('/zones/generate', [\App\Http\Controllers\Api\ServiceZoneController::class, 'store']);
+Route::get('/zones/check', [\App\Http\Controllers\Api\ServiceZoneController::class, 'check']);
+Route::delete('/routes/clear', [RouteController::class, 'clear']);
 Route::get('/routes', [RouteController::class, 'index']);
 Route::get('/routes/{id}', [RouteController::class, 'show']);
 
