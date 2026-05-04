@@ -12,21 +12,31 @@ const ROUTE_COLORS = [
 ]
 
 export default function FleetOverview() {
-  const { activeMultiRoutes, activeRoute, setActiveRouteBase } = useApp()
+  const { activeMultiRoutes, activeRoute, setActiveRouteBase, vehicles } = useApp()
 
-  if (!activeMultiRoutes || activeMultiRoutes.length === 0) return null
+  const displayedRoutes = (activeMultiRoutes || []).filter(route => {
+    // Find latest availability from state
+    const latestVehicle = vehicles.find(v => String(v.id) === String(route.vehicle_id || route.vehicle?.id))
+    const isAvailable = latestVehicle ? latestVehicle.is_available : (route.vehicle?.is_available ?? true)
+    
+    // Only show if the route is already in progress 
+    // OR if it's a planned route and the vehicle is currently available
+    return route.status === 'in_progress' || isAvailable
+  })
+
+  if (displayedRoutes.length === 0) return null
 
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Fleet Dispatch</h3>
         <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-500 font-bold uppercase">
-          {activeMultiRoutes.length} Vehicles
+          {displayedRoutes.length} Vehicles
         </span>
       </div>
       
       <div className="space-y-2">
-        {activeMultiRoutes.map((route, idx) => {
+        {displayedRoutes.map((route, idx) => {
           const isSelected = activeRoute?.route_id === route.route_id
           const color = ROUTE_COLORS[idx % ROUTE_COLORS.length]
           

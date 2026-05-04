@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import MapView from '../components/Map/MapView'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
@@ -7,10 +7,10 @@ import FleetOverview from '../components/Route/FleetOverview'
 import ActiveRouteSummary from '../components/Route/ActiveRouteSummary'
 import RouteDetailsPanel from '../components/Route/RouteDetailsPanel'
 import SimulationControls from '../components/Route/SimulationControls'
-import DeliveryInput from '../components/Forms/DeliveryInput'
 import { useApp } from '../context/AppContext'
 
 export default function Dashboard() {
+  const [showStopSequence, setShowStopSequence] = useState(false)
   const {
     centers,
     orders,
@@ -107,12 +107,13 @@ export default function Dashboard() {
           </Button>
         </Card>
 
-        <DeliveryInput />
-
-        <FleetOverview />
-        <ActiveRouteSummary route={activeRoute} />
+        <ActiveRouteSummary 
+          route={activeRoute} 
+          onToggleSequence={() => setShowStopSequence(!showStopSequence)}
+          showSequence={showStopSequence}
+        />
         <SimulationControls />
-        <RouteDetailsPanel route={activeRoute} />
+        {showStopSequence && <RouteDetailsPanel route={activeRoute} />}
       </section>
     </div>
   )

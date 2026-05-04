@@ -18,6 +18,8 @@ class Vehicle extends Model
         'is_available',
         'current_load',
         'delivery_center_id',
+        'latitude',
+        'longitude',
     ];
 
     protected function casts(): array
@@ -26,6 +28,8 @@ class Vehicle extends Model
             'capacity' => 'integer',
             'average_speed' => 'float',
             'is_available' => 'boolean',
+            'latitude' => 'float',
+            'longitude' => 'float',
         ];
     }
 

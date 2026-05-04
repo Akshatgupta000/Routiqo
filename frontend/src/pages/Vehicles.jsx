@@ -74,14 +74,12 @@ export default function Vehicles() {
           </button>
           <button
             onClick={async () => {
-              if (window.confirm('Are you sure you want to delete this vehicle?')) {
-                try {
-                  await api.deleteVehicle(r.id)
-                  toast('Vehicle deleted.')
-                  refreshVehicles()
-                } catch (err) {
-                  toast('Failed to delete vehicle.', 'error')
-                }
+              try {
+                await api.deleteVehicle(r.id)
+                toast('Vehicle deleted.')
+                refreshVehicles()
+              } catch (err) {
+                toast('Failed to delete vehicle.', 'error')
               }
             }}
             className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition-colors dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60"

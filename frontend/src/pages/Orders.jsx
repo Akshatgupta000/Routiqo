@@ -11,7 +11,7 @@ import AddCenterModal from '../components/Forms/AddCenterModal'
 import AddVehicleModal from '../components/Forms/AddVehicleModal'
 
 export default function Orders() {
-  const { centers, orders, refreshOrders, refreshRoutes, refreshVehicles, toast } = useApp()
+  const { centers, orders, vehicles, refreshOrders, refreshRoutes, refreshVehicles, toast } = useApp()
   const [filter, setFilter] = useState('')
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState(false)
@@ -54,16 +54,88 @@ export default function Orders() {
       key: 'vehicle',
       label: 'Vehicle',
       render: (r) => {
-        if (!r.vehicle) return <span className="text-zinc-400 text-xs italic">Unassigned</span>
+        // Use both the order's delivery_center_id and its nested delivery_center.id
+        // to handle MongoDB ObjectId string serialization differences
+        const orderCenterId = String(r.delivery_center?.id ?? r.delivery_center_id ?? '')
+
+        const centerVehicles = vehicles.filter(v => {
+          const vCenterId = String(v.delivery_center?.id ?? v.delivery_center_id ?? '')
+          return vCenterId === orderCenterId && v.is_available
+        })
+        const firstAvailable = centerVehicles[0]
+
+        const handleChange = async (vid) => {
+          if (!vid) return
+          try {
+            await api.updateOrder(r.id, { vehicle_id: vid, status: 'assigned' })
+            toast('Vehicle assigned successfully')
+            refreshOrders()
+            refreshVehicles()
+          } catch (err) {
+            toast('Assignment failed', 'error')
+          }
+        }
+
         return (
-          <div className="flex flex-col">
-            <span className="font-semibold text-zinc-900 dark:text-white">
-              {r.vehicle.name}
-            </span>
-            {r.vehicle.vehicle_number && (
-              <span className="font-mono text-[10px] tracking-tight text-zinc-500">
-                {r.vehicle.vehicle_number}
-              </span>
+          <div className="group relative min-w-[140px]">
+            {!r.vehicle ? (
+              <div className="flex flex-col py-1">
+                <span className="text-[9px] font-black uppercase tracking-tighter text-emerald-500/70">
+                  Auto-Suggest
+                </span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  {firstAvailable?.name ?? 'No fleet available'}
+                </span>
+                {firstAvailable && (
+                  <span className="font-mono text-[9px] text-zinc-400">
+                    {firstAvailable.vehicle_number}
+                  </span>
+                )}
+                {!firstAvailable && orderCenterId && (
+                  <span className="text-[9px] italic text-zinc-400">
+                    No available vehicle in {r.delivery_center?.name ?? 'this hub'}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col py-1">
+                <span className="text-[9px] font-black uppercase tracking-tighter text-zinc-400">
+                  Assigned
+                </span>
+                <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                  {r.vehicle.name}
+                </span>
+                {r.vehicle.vehicle_number && (
+                  <span className="font-mono text-[9px] text-zinc-400">
+                    {r.vehicle.vehicle_number}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Hover-activated Select Overlay */}
+            {centerVehicles.length > 0 && (
+              <select
+                className="absolute inset-0 cursor-pointer opacity-0"
+                value={r.vehicle?.id || ''}
+                onChange={(e) => handleChange(e.target.value)}
+              >
+                <option value="" disabled>
+                  {r.vehicle ? 'Change vehicle...' : 'Assign to...'}
+                </option>
+                {centerVehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} ({v.vehicle_number})
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Tooltip hint on hover */}
+            {centerVehicles.length > 0 && (
+              <div className="pointer-events-none absolute -top-6 left-0 scale-0 rounded bg-zinc-900 px-2 py-1 text-[9px] text-white transition-all group-hover:scale-100 dark:bg-white dark:text-zinc-900">
+                Click to change assignment
+              </div>
             )}
           </div>
         )
@@ -157,7 +229,6 @@ export default function Orders() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this order?')) return
     try {
       await api.deleteOrder(id)
       toast('Order deleted')

@@ -53,7 +53,7 @@ class OrderController extends Controller
 
         abort_if(! $order, 404);
 
-        $order = $this->orderService->updateOrderStatus($order, $request->validated('status'));
+        $order = $this->orders->update($order, $request->validated());
         $order->load(['deliveryCenter', 'vehicle']);
 
         return new OrderResource($order);

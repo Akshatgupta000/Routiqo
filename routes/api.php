@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/centers', [DeliveryCenterController::class, 'store']);
 Route::get('/centers', [DeliveryCenterController::class, 'index']);
+Route::patch('/centers/{id}', [DeliveryCenterController::class, 'update']);
+Route::delete('/centers/{id}', [DeliveryCenterController::class, 'destroy']);
 
 Route::post('/orders', [OrderController::class, 'store']);
 Route::get('/orders', [OrderController::class, 'index']);

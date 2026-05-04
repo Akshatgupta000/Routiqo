@@ -9,12 +9,10 @@ import {
 } from 'react'
 import * as api from '../services/api'
 import { computeVehiclePosition } from '../utils/routeMap'
-import { buildPlaybackPathForRoute } from '../utils/simplePlaybackPath'
+import { buildPlaybackPathForRoute, buildLegPath } from '../utils/simplePlaybackPath'
 import { Delaunay } from 'd3-delaunay'
 
 export const AppContext = createContext(null)
-
-let toastId = 0
 
 function readInitialTheme() {
   try {
@@ -34,6 +32,60 @@ function stripMeta(route) {
   // eslint-disable-next-line no-unused-vars -- strip comparison attachment
   const { _comparisonRoute, ...rest } = route
   return rest
+}
+
+function getRouteKey(route) {
+  return String(route?.route_id ?? route?.id ?? '')
+}
+
+function toSimulationRouteStatus(routeStatus) {
+  if (routeStatus === 'in_progress') return 'active'
+  if (routeStatus === 'completed') return 'completed'
+  return 'pending'
+}
+
+function normalizeRouteForSimulation(route) {
+  if (!route) return null
+
+  const routeStatus = route.status ?? 'planned'
+  const sortedStops = [...(route.stops ?? [])].sort(
+    (a, b) => Number(a.sequence ?? 0) - Number(b.sequence ?? 0)
+  )
+  const currentSequence = Number(route.next_stop_sequence ?? 1)
+
+  const stops = sortedStops.map((stop, index) => {
+    let status = stop.status
+
+    if (!status) {
+      if (routeStatus === 'completed') {
+        status = 'delivered'
+      } else if (routeStatus === 'in_progress') {
+        const sequence = Number(stop.sequence ?? index + 1)
+        if (sequence < currentSequence) status = 'delivered'
+        else if (sequence === currentSequence) status = 'current'
+        else status = 'pending'
+      } else {
+        status = 'pending'
+      }
+    }
+
+    return {
+      ...stop,
+      id: stop.id ?? stop.order_id ?? `${getRouteKey(route)}-${index}`,
+      lat: Number(stop.lat ?? stop.latitude ?? stop.order?.latitude ?? 0),
+      lng: Number(stop.lng ?? stop.longitude ?? stop.order?.longitude ?? 0),
+      status,
+    }
+  })
+
+  const currentStopIndex = stops.findIndex((s) => s.status === 'current')
+
+  return {
+    ...route,
+    simulation_status: toSimulationRouteStatus(routeStatus),
+    currentStopIndex: currentStopIndex >= 0 ? currentStopIndex : 0,
+    stops,
+  }
 }
 
 export function AppProvider({ children }) {
@@ -85,26 +137,31 @@ export function AppProvider({ children }) {
   }, [theme])
 
   const toast = useCallback((message, type = 'success') => {
-    const id = ++toastId
     let safeMessage = String(message)
     if (typeof message === 'object' && message !== null) {
       try {
-        if (message.message) {
-          safeMessage = message.message
-        } else {
-          safeMessage = JSON.stringify(message)
-        }
-      } catch (err) {
+        safeMessage = message.message || JSON.stringify(message)
+      } catch {
         safeMessage = '[Non-serializable Object]'
-        console.error('Toast serialization failed', err)
       }
     }
+    
+    const id = Date.now()
+    
+    setToasts((prev) => {
+      // If the message is already active, don't duplicate it
+      if (prev.some(t => t.message === safeMessage)) return prev
       
-    setToasts((t) => [...t, { id, message: safeMessage, type }])
+      // For a "single notification" experience as requested, we could also clear others
+      // But let's just prevent duplicates for now to keep it usable.
+      return [...prev, { id, message: safeMessage, type }]
+    })
+
     setTimeout(() => {
       setToasts((t) => t.filter((x) => x.id !== id))
-    }, 4500)
+    }, 4000)
   }, [])
+
 
   const clearPlaybackTimer = useCallback(() => {
     if (playbackIntervalRef.current != null) {
@@ -129,7 +186,7 @@ export function AppProvider({ children }) {
           const max = pts.length - 1
           const cur = next[vid] ?? 0
           if (cur < max) {
-            next[vid] = cur + 1
+            next[vid] = Math.min(cur + 2, max)
             allDone = false
           }
         }
@@ -138,13 +195,12 @@ export function AppProvider({ children }) {
           clearPlaybackTimer()
           window.setTimeout(() => {
             setSimulationPhase('completed')
-            toast('Vehicles reached the end of the route.')
           }, 0)
         }
 
         return next
       })
-    }, 100)
+    }, 30)
   }, [clearPlaybackTimer, toast])
 
   useEffect(() => () => clearPlaybackTimer(), [clearPlaybackTimer])
@@ -212,7 +268,7 @@ export function AppProvider({ children }) {
       ? Array.from(new Map(list.map(item => [item.route_id, item])).values())
       : []
 
-    setRoutesList(uniqueList)
+    setRoutesList(uniqueList.map(normalizeRouteForSimulation))
     return uniqueList
   }, [])
 
@@ -284,12 +340,24 @@ export function AppProvider({ children }) {
   }, [refreshCenters, refreshOrders, refreshVehicles, refreshRoutes, refreshZones, toast])
 
   useEffect(() => {
-    const id = window.setTimeout(() => {
-      void bootstrap()
-    }, 0)
-    return () => window.clearTimeout(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
-  }, [])
+    bootstrap()
+  }, [bootstrap])
+
+  // Auto-focus map when center is selected via dropdown or marker click
+  useEffect(() => {
+    if (selectedCenterId) {
+      const center = centers.find(c => String(c.id) === String(selectedCenterId))
+      if (center) {
+        const lat = Number(center.latitude)
+        const lng = Number(center.longitude)
+        
+        // Only trigger focus change if coordinates are different from current focus
+        if (!mapFocus || mapFocus.lat !== lat || mapFocus.lng !== lng) {
+          setMapFocus({ lat, lng, zoom: 12 })
+        }
+      }
+    }
+  }, [selectedCenterId, centers, mapFocus])
 
   const attachComparison = useCallback((route, profile, comparisonsList) => {
     if (!route || !comparisonsList?.length) return route
@@ -313,7 +381,7 @@ export function AppProvider({ children }) {
   )
 
   const setActiveRoute = useCallback((route) => {
-    setActiveRouteBase(stripMeta(route))
+    setActiveRouteBase(normalizeRouteForSimulation(stripMeta(route)))
   }, [])
 
   const resetFleetSimulation = useCallback(
@@ -363,19 +431,20 @@ export function AppProvider({ children }) {
         activeProfile === 'shortest' ? c.shortest_distance_route : c.fastest_time_route
       )
       
-      setActiveMultiRoutes(allPrimaryRoutes.map(stripMeta))
+      setActiveMultiRoutes(
+        allPrimaryRoutes.map((r) => normalizeRouteForSimulation(stripMeta(r)))
+      )
       if (allPrimaryRoutes.length > 0) {
-        setActiveRouteBase(stripMeta(allPrimaryRoutes[0]))
+        setActiveRouteBase(normalizeRouteForSimulation(stripMeta(allPrimaryRoutes[0])))
       }
       
       // Keep first one as the main active route for backwards compatibility / simulation
       if (allPrimaryRoutes.length > 0) {
-        setActiveRouteBase(stripMeta(allPrimaryRoutes[0]))
+        setActiveRouteBase(normalizeRouteForSimulation(stripMeta(allPrimaryRoutes[0])))
       }
       
       await Promise.all([refreshOrders(), refreshRoutes()])
       resetFleetSimulation({ silent: true })
-      toast(`Routes generated for ${allPrimaryRoutes.length} vehicles.`)
     } catch (e) {
       const msg =
         e?.response?.data?.errors?.delivery_center_id?.[0] ||
@@ -397,8 +466,40 @@ export function AppProvider({ children }) {
   ])
 
   const selectRouteFromList = useCallback((route) => {
-    const stripped = stripMeta(route)
+    const stripped = normalizeRouteForSimulation(stripMeta(route))
     setActiveRouteBase(stripped)
+  }, [])
+
+  const applyRouteSimulationUpdate = useCallback((updatedRoute) => {
+    const normalized = normalizeRouteForSimulation(stripMeta(updatedRoute))
+    if (!normalized) return
+
+    const updatedKey = getRouteKey(normalized)
+
+    setActiveRouteBase((prev) => {
+      if (!prev || getRouteKey(prev) === updatedKey) return normalized
+      return prev
+    })
+
+    setActiveMultiRoutes((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) return prev
+      return prev.map((r) => (getRouteKey(r) === updatedKey ? normalized : r))
+    })
+
+    setComparisons((prev) => {
+      if (!Array.isArray(prev) || prev.length === 0) return prev
+      return prev.map((row) => ({
+        ...row,
+        shortest_distance_route:
+          getRouteKey(row.shortest_distance_route) === updatedKey
+            ? normalized
+            : row.shortest_distance_route,
+        fastest_time_route:
+          getRouteKey(row.fastest_time_route) === updatedKey
+            ? normalized
+            : row.fastest_time_route,
+      }))
+    })
   }, [])
 
 
@@ -410,11 +511,34 @@ export function AppProvider({ children }) {
     setDraftDeliveries((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  const startFleetSimulation = useCallback(() => {
-    const routesToSimulate =
-      activeMultiRoutes.length > 0 ? activeMultiRoutes : activeRoute ? [activeRoute] : []
+  const simulateLegAction = useCallback((route) => {
+    if (!route || !route.vehicle_id) return
+    const path = buildLegPath(route, centers)
+    if (!path || path.length < 2) return
+    
+    playbackPathsRef.current = { [route.vehicle_id]: path }
+    setRoutePlaybackStep({ [route.vehicle_id]: 0 })
+    setSimulationPhase('playing')
+    runPlaybackTimer()
+  }, [centers, runPlaybackTimer])
 
-    if (!routesToSimulate.length) return
+  const startFleetSimulation = useCallback(() => {
+    const routesToSimulate = (
+      activeMultiRoutes.length > 0 ? activeMultiRoutes : activeRoute ? [activeRoute] : []
+    ).filter(r => {
+      // Find latest availability from state
+      const latestVehicle = vehicles.find(v => String(v.id) === String(r.vehicle_id || r.vehicle?.id))
+      const isAvailable = latestVehicle ? latestVehicle.is_available : (r.vehicle?.is_available ?? true)
+      
+      // Only simulate if the route is already in progress 
+      // OR if it's a planned route and the vehicle is currently available
+      return r.status === 'in_progress' || isAvailable
+    })
+
+    if (!routesToSimulate.length) {
+      toast('No active or planned routes for available vehicles found.', 'info')
+      return
+    }
 
     /** @type {Record<string, Array<[number, number]>>} */
     const paths = {}
@@ -471,7 +595,7 @@ export function AppProvider({ children }) {
     try {
       const payload = centerId ? { delivery_center_id: centerId } : {}
       await api.resetFleet(payload)
-      await refreshVehicles()
+      await Promise.all([refreshVehicles(), refreshRoutes(), refreshOrders()])
       toast('Fleet status reset to available.')
     } catch {
       toast('Failed to reset fleet.', 'error')
@@ -497,7 +621,9 @@ export function AppProvider({ children }) {
       setComparisons,
       activeRoute,
       setActiveRoute,
+      applyRouteSimulationUpdate,
       activeMultiRoutes,
+      setActiveMultiRoutes,
       setActiveRouteBase,
       activeProfile,
       setActiveProfile,
@@ -552,7 +678,9 @@ export function AppProvider({ children }) {
       comparisons,
       activeRoute,
       setActiveRoute,
+      applyRouteSimulationUpdate,
       activeMultiRoutes,
+      setActiveMultiRoutes,
       setActiveRouteBase,
       activeProfile,
       selectedCenterId,
@@ -582,6 +710,7 @@ export function AppProvider({ children }) {
       routePlaybackCoords,
       routePlaybackStep,
       startFleetSimulation,
+      simulateLegAction,
       pauseFleetSimulation,
       resumeFleetSimulation,
       resetFleetSimulation,

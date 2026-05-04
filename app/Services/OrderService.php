@@ -47,7 +47,10 @@ class OrderService
         $center = $this->resolveNearestCenter((float) $order->latitude, (float) $order->longitude);
         if (! $center) {
             throw ValidationException::withMessages([
-                'address' => 'No delivery zone found for this location.',
+                'address' => [
+                    'message' => 'No nearby delivery center found within 10km.',
+                    'code' => 'out_of_range'
+                ],
             ]);
         }
 
@@ -59,23 +62,16 @@ class OrderService
 
     private function resolveNearestCenter(float $latitude, float $longitude): ?DeliveryCenter
     {
-        $zones = ServiceZone::all();
+        $centers = DeliveryCenter::all();
+        if ($centers->isEmpty()) return null;
 
-        foreach ($zones as $zone) {
-            if ($this->zoneService->isPointInPolygon($latitude, $longitude, $zone->polygon_coordinates)) {
-                return DeliveryCenter::find($zone->delivery_center_id);
-            }
-        }
+        $nearest = $centers->map(function ($c) use ($latitude, $longitude) {
+            $c->dist = \App\Helpers\DistanceHelper::kmBetween($latitude, $longitude, $c->latitude, $c->longitude);
+            return $c;
+        })->sortBy('dist')->first();
 
-        // Fallback for system initialization if no zones exist
-        if ($zones->isEmpty()) {
-            $centers = DeliveryCenter::all();
-            if ($centers->isEmpty()) return null;
-
-            return $centers->map(function ($c) use ($latitude, $longitude) {
-                $c->dist = \App\Helpers\DistanceHelper::kmBetween($latitude, $longitude, $c->latitude, $c->longitude);
-                return $c;
-            })->sortBy('dist')->first();
+        if ($nearest && $nearest->dist <= 10.0) {
+            return $nearest;
         }
 
         return null;

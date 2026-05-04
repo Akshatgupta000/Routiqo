@@ -146,13 +146,15 @@ class RouteService
                     if ($stop->order) {
                         $this->orders->update($stop->order, [
                             'vehicle_id' => null,
+                            'status' => OrderStatus::Pending,
                         ]);
                     }
                 }
                 
-                // Mark vehicle as available again
                 if ($route->vehicle) {
-                    $route->vehicle->update(['is_available' => true, 'current_load' => 0]);
+                    // If it was in progress, it's likely safe to make available, 
+                    // but we should probably just reset load.
+                    $route->vehicle->update(['current_load' => 0]);
                 }
                 
                 $this->routes->deleteRoute($route);
@@ -197,7 +199,11 @@ class RouteService
 
             // Mark vehicle as busy ONLY when starting
             if ($route->vehicle) {
-                $route->vehicle->update(['is_available' => false]);
+                $route->vehicle->update([
+                    'is_available' => false,
+                    'latitude' => $route->deliveryCenter->latitude,
+                    'longitude' => $route->deliveryCenter->longitude,
+                ]);
             }
 
             $this->routes->update($route, [
@@ -242,7 +248,8 @@ class RouteService
         }
 
         DB::transaction(function () use ($route, $stop, $next): void {
-            $this->orders->markStatus($stop->order, OrderStatus::Delivered);
+            // Automatic delivery removed as per user request
+            // $this->orders->markStatus($stop->order, OrderStatus::Delivered);
 
             $maxSequence = (int) $route->routeStops->max('sequence');
 
@@ -252,17 +259,38 @@ class RouteService
                     'next_stop_sequence' => null,
                 ]);
 
-                // Reset vehicle availability
+                // Simulation reached last stop: revert orders back to Pending.
+                // Actual delivery only happens via manual tick in the Orders section.
+                foreach ($route->routeStops as $routeStop) {
+                    if ($routeStop->order && $routeStop->order->status === OrderStatus::Assigned) {
+                        $this->orders->update($routeStop->order, [
+                            'status' => OrderStatus::Pending,
+                            'vehicle_id' => null,
+                        ]);
+                    }
+                }
+
+                // Reset vehicle availability and return to hub
                 if ($route->vehicle) {
                     $route->vehicle->update([
                         'is_available' => true,
-                        'current_load' => 0
+                        'current_load' => 0,
+                        'latitude' => $route->deliveryCenter->latitude,
+                        'longitude' => $route->deliveryCenter->longitude,
                     ]);
                 }
             } else {
                 $this->routes->update($route, [
                     'next_stop_sequence' => $next + 1,
                 ]);
+
+                // Move vehicle to the delivered stop
+                if ($route->vehicle) {
+                    $route->vehicle->update([
+                        'latitude' => $stop->order->latitude,
+                        'longitude' => $stop->order->longitude,
+                    ]);
+                }
             }
         });
 
@@ -281,20 +309,29 @@ class RouteService
         }
 
         DB::transaction(function () use ($route): void {
-            foreach ($route->routeStops as $stop) {
-                $this->orders->markStatus($stop->order, OrderStatus::Delivered);
-            }
-
             $this->routes->update($route, [
                 'status' => RouteStatus::Completed,
                 'next_stop_sequence' => null,
             ]);
 
-            // Reset vehicle availability
+            // Simulation complete: revert orders back to Pending.
+            // Actual delivery only happens via manual tick in the Orders section.
+            foreach ($route->routeStops as $stop) {
+                if ($stop->order && $stop->order->status === OrderStatus::Assigned) {
+                    $this->orders->update($stop->order, [
+                        'status' => OrderStatus::Pending,
+                        'vehicle_id' => null,
+                    ]);
+                }
+            }
+
+            // Reset vehicle availability and return to hub
             if ($route->vehicle) {
                 $route->vehicle->update([
                     'is_available' => true,
-                    'current_load' => 0
+                    'current_load' => 0,
+                    'latitude' => $route->deliveryCenter->latitude,
+                    'longitude' => $route->deliveryCenter->longitude,
                 ]);
             }
         });
@@ -351,11 +388,18 @@ class RouteService
      */
     private function processCenter(DeliveryCenter $center, Carbon $departureAt): array
     {
-        $pending = $this->orders->pendingForCenter($center->id);
+        $pending = $this->orders->pendingForCenter($center->id)
+            ->filter(function ($o) use ($center) {
+                return \App\Helpers\DistanceHelper::kmBetween(
+                    (float) $o->latitude, (float) $o->longitude,
+                    (float) $center->latitude, (float) $center->longitude
+                ) <= 10.0;
+            });
+
         if ($pending->isEmpty()) {
             Log::info('route.generate.center.skip', [
                 'delivery_center_id' => $center->id,
-                'reason' => 'no_pending_orders',
+                'reason' => 'no_pending_orders_within_range',
             ]);
 
             return [];
@@ -368,7 +412,8 @@ class RouteService
             ]);
         }
 
-        $this->assertCapacityCoversOrders($vehicles, $pending);
+        // Removed strict capacity check to allow "last vehicle takes all" logic
+        // $this->assertCapacityCoversOrders($vehicles, $pending);
 
         $clusters = $this->clusterOrdersByVehicleCapacity(
             $pending,
@@ -387,11 +432,9 @@ class RouteService
 
                 /** @var Vehicle $vehicle */
                 $vehicle = $vehicles->firstWhere('id', $vehicleId);
-                if ($bucket->count() > $vehicle->capacity) {
-                    throw ValidationException::withMessages([
-                        'delivery_center_id' => __('Vehicle capacity was exceeded while clustering orders.'),
-                    ]);
-                }
+                
+                // Individual capacity check removed to allow for overloading fallback
+                // if ($bucket->count() > $vehicle->capacity) { ... }
 
                 $batchId = (string) Str::uuid();
 
@@ -499,8 +542,10 @@ class RouteService
         $capacity = (int) $vehicles->sum('capacity');
 
         if ($capacity < $orders->count()) {
-            throw ValidationException::withMessages([
-                'delivery_center_id' => __('Combined vehicle capacity is insufficient for all pending orders.'),
+            Log::warning('route.capacity.insufficient', [
+                'total_capacity' => $capacity,
+                'total_orders' => $orders->count(),
+                'message' => 'Combined vehicle capacity is nominally insufficient. Last vehicle will pick up the slack.'
             ]);
         }
     }
@@ -516,6 +561,15 @@ class RouteService
         float $depotLat,
         float $depotLon
     ): array {
+        if ($vehicles->count() === 1) {
+            /** @var Vehicle $singleVehicle */
+            $singleVehicle = $vehicles->first();
+
+            return [
+                $singleVehicle->id => $orders->values(),
+            ];
+        }
+
         $sorted = $orders->sort(function (Order $a, Order $b) use ($depotLat, $depotLon) {
             if ($a->priority->rank() !== $b->priority->rank()) {
                 return $b->priority->rank() <=> $a->priority->rank();
@@ -536,17 +590,26 @@ class RouteService
         $totalOrders = $sorted->count();
         $totalVehicles = $vehicles->count();
 
-        // Calculate a target per-vehicle load to keep things balanced
-        $targetPerVehicle = (int) ceil($totalOrders / $totalVehicles);
-
         foreach ($vehicles->sortBy('id')->values() as $index => $vehicle) {
             $remainingOrders = $totalOrders - $cursor;
+            if ($remainingOrders <= 0) {
+                $buckets[$vehicle->id] = collect();
+                continue;
+            }
+
             $remainingVehicles = $totalVehicles - $index;
+            $isLastVehicle = ($remainingVehicles === 1);
+
+            if ($isLastVehicle) {
+                // If this is the last available vehicle, it MUST take all remaining orders
+                // even if it exceeds its nominal capacity.
+                $take = $remainingOrders;
+            } else {
+                // For non-last vehicles, we try to balance the load while respecting capacity
+                $currentAvailableTarget = (int) ceil($remainingOrders / $remainingVehicles);
+                $take = min($vehicle->capacity, $currentAvailableTarget);
+            }
             
-            // Adjust target for remaining vehicles
-            $currentAvailableTarget = (int) ceil($remainingOrders / $remainingVehicles);
-            
-            $take = min($vehicle->capacity, $currentAvailableTarget);
             $slice = $sorted->slice($cursor, $take)->values();
             
             $cursor += $slice->count();
@@ -616,10 +679,17 @@ class RouteService
             // Check if order is physically inside this center's Voronoi zone
             if ($zoneService->isPointInPolygon((float)$order->latitude, (float)$order->longitude, $zone->polygon_coordinates)) {
                 
+                // Extra safety: must also be within the radius limit (10km)
+                $dist = \App\Helpers\DistanceHelper::kmBetween(
+                    (float)$order->latitude, (float)$order->longitude,
+                    (float)$center->latitude, (float)$center->longitude
+                );
+                if ($dist > $radiusKm) continue;
+                
                 // Safety check: don't steal if it's already in an InProgress route
                 if ($order->status === OrderStatus::Assigned) {
                     $stop = $order->routeStop;
-                    if ($stop && $stop->deliveryRoute && $stop->deliveryRoute->status === RouteStatus::InProgress) {
+                    if ($stop && $stop->route && $stop->route->status === RouteStatus::InProgress) {
                         continue; 
                     }
                 }

@@ -136,9 +136,9 @@ class RouteController extends Controller
             \App\Models\Order::whereIn('id', $route->routeStops->pluck('order_id'))
                 ->update(['vehicle_id' => null]);
             
-            // Set vehicles back to available
+            // Reset load but respect manual is_available status
             if ($route->vehicle) {
-                $route->vehicle->update(['is_available' => true, 'current_load' => 0]);
+                $route->vehicle->update(['current_load' => 0]);
             }
         }
 

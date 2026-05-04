@@ -4,7 +4,9 @@ import Button from '../UI/Button'
 import { useApp } from '../../context/AppContext'
 import { formatDuration, formatKm } from '../../utils/format'
 import AddCenterModal from '../Forms/AddCenterModal'
+import EditCenterModal from '../Forms/EditCenterModal'
 import { useState } from 'react'
+import * as api from '../../services/api'
 
 const linkClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
@@ -17,15 +19,34 @@ export default function Sidebar() {
   const {
     toggleTheme,
     theme,
-    activeRoute,
     centers,
     selectedCenterId,
     setSelectedCenterId,
+    refreshCenters,
+    setActiveMultiRoutes,
+    setActiveRouteBase,
+    toast,
   } = useApp()
 
   const [addCenterOpen, setAddCenterOpen] = useState(false)
+  const [editCenterOpen, setEditCenterOpen] = useState(false)
 
-  const stops = activeRoute?.stops?.length ?? 0
+  const currentCenter = centers.find(c => c.id === selectedCenterId)
+
+  const handleDeleteCenter = async () => {
+    if (!selectedCenterId) return
+    if (!window.confirm(`Are you sure you want to delete "${currentCenter?.name}"? This will unassign all vehicles from this hub.`)) return
+
+    try {
+      await api.deleteCenter(selectedCenterId)
+      toast('Delivery center removed')
+      setSelectedCenterId(null)
+      refreshCenters()
+    } catch (err) {
+      toast('Failed to delete hub', 'error')
+    }
+  }
+
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-transparent">
@@ -71,55 +92,54 @@ export default function Sidebar() {
             + Add New
           </button>
         </div>
-        <select
-          className="mb-3 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-          value={selectedCenterId ?? ''}
-          onChange={(e) =>
-            setSelectedCenterId(e.target.value ? Number(e.target.value) : null)
-          }
-        >
-          {centers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        <Card className="!p-4">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-            Active route
-          </p>
-          {activeRoute ? (
-            <>
-              <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-white">
-                #{activeRoute.route_id} · {activeRoute.optimization_profile?.replace?.('_', ' ') ?? '—'}
-              </p>
-              <dl className="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
-                <div className="flex justify-between">
-                  <dt>Stops</dt>
-                  <dd className="font-semibold text-zinc-900 dark:text-white">{stops}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt>Distance</dt>
-                  <dd className="font-semibold text-zinc-900 dark:text-white">
-                    {formatKm(activeRoute.total_distance)}
-                  </dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt>Est. time</dt>
-                  <dd className="font-semibold text-zinc-900 dark:text-white">
-                    {formatDuration(activeRoute.total_time)}
-                  </dd>
-                </div>
-              </dl>
-            </>
-          ) : (
-            <p className="mt-2 text-xs text-zinc-500">Generate a route to see summary.</p>
+        <div className="flex gap-2 mb-3">
+          <select
+            className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+            value={selectedCenterId ?? ''}
+            onChange={(e) => {
+              const id = e.target.value || null
+              setSelectedCenterId(id)
+              // Clear routes when selecting via dropdown as per user request
+              setActiveMultiRoutes([])
+              setActiveRouteBase(null)
+            }}
+          >
+            <option value="">Select a Hub...</option>
+            {centers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          
+          {selectedCenterId && (
+            <div className="flex gap-1">
+              <button
+                title="Edit Hub"
+                className="flex items-center justify-center w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
+                onClick={() => setEditCenterOpen(true)}
+              >
+                ✎
+              </button>
+              <button
+                title="Delete Hub"
+                className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-100"
+                onClick={handleDeleteCenter}
+              >
+                ✕
+              </button>
+            </div>
           )}
-        </Card>
+        </div>
+
       </div>
 
       <AddCenterModal open={addCenterOpen} onClose={() => setAddCenterOpen(false)} />
+      <EditCenterModal 
+        open={editCenterOpen} 
+        onClose={() => setEditCenterOpen(false)} 
+        center={currentCenter}
+      />
     </div>
   )
 }

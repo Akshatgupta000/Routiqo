@@ -53,6 +53,9 @@ class EloquentOrderRepository implements OrderRepositoryInterface
         return Order::query()
             ->where('delivery_center_id', $deliveryCenterId)
             ->whereIn('status', [OrderStatus::Pending, OrderStatus::Assigned])
+            ->whereDoesntHave('routeStop.route', function ($q) {
+                $q->where('status', \App\Enums\RouteStatus::InProgress);
+            })
             ->orderBy('priority')
             ->orderBy('_id')
             ->get();

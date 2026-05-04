@@ -40,6 +40,16 @@ export async function createCenter(payload) {
   return data
 }
 
+export async function updateCenter(id, payload) {
+  const { data } = await client.patch(`/centers/${id}`, payload)
+  return data
+}
+
+export async function deleteCenter(id) {
+  const { data } = await client.delete(`/centers/${id}`)
+  return data
+}
+
 export async function getOrders(params = {}) {
   const { data } = await client.get('/orders', { params })
   return data

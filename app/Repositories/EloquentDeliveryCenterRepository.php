@@ -22,4 +22,16 @@ class EloquentDeliveryCenterRepository implements DeliveryCenterRepositoryInterf
     {
         return DeliveryCenter::query()->create($data);
     }
+
+    public function update(DeliveryCenter $center, array $data): DeliveryCenter
+    {
+        $center->update($data);
+
+        return $center->fresh();
+    }
+
+    public function delete(DeliveryCenter $center): void
+    {
+        $center->delete();
+    }
 }
