@@ -57,7 +57,6 @@ class RouteOptimizationApiTest extends TestCase
                                 ],
                             ],
                         ],
-                        'fastest_time_route',
                     ],
                 ],
             ]);
@@ -66,16 +65,10 @@ class RouteOptimizationApiTest extends TestCase
         $this->assertNotEmpty($batch);
 
         $routes = DeliveryRoute::query()->where('comparison_batch_id', $batch)->get();
-        $this->assertCount(2, $routes);
+        $this->assertCount(1, $routes);
 
         $distanceRoute = DeliveryRoute::query()->where('comparison_batch_id', $batch)->where('optimization_profile', 'shortest_distance')->first();
-        $timeRoute = DeliveryRoute::query()->where('comparison_batch_id', $batch)->where('optimization_profile', 'fastest_time')->first();
         $this->assertNotNull($distanceRoute);
-        $this->assertNotNull($timeRoute);
-
-        $distanceOrders = $distanceRoute->routeStops->pluck('order_id')->sort()->values()->all();
-        $timeOrders = $timeRoute->routeStops->pluck('order_id')->sort()->values()->all();
-        $this->assertSame($distanceOrders, $timeOrders, 'Both optimization profiles must cover the same order set.');
 
         foreach ($routes as $route) {
             $ids = $route->routeStops->pluck('order_id');

@@ -40,40 +40,9 @@ final class RouteOptimizer
         );
     }
 
-    /**
-     * Heuristic minimizing total **time** (seconds) including travel and per-stop service,
-     * using cheapest insertion, then 2-opt on the time metric.
-     *
-     * @param  Collection<int, Order>  $orders
-     * @return array<int, Order>
-     */
-    public function buildFastestTimeTour(Collection $orders, float $averageSpeedKmh, int $serviceSecondsPerStop): array
-    {
-        if ($orders->isEmpty()) {
-            return [];
-        }
-
-        $speed = max($averageSpeedKmh, 1.0);
-        $travelTime = static fn (array $a, array $b): float => (DistanceHelper::betweenPoints($a, $b) / $speed) * 3600.0;
-
-        $tour = $this->cheapestInsertionByTime($orders, $travelTime, $serviceSecondsPerStop);
-
-        $edgeMetric = static fn (array $a, array $b): float => $travelTime($a, $b);
-
-        return $this->twoOptByMetric($tour, $edgeMetric, 0, $orders);
-    }
-
     public function tourDistanceKm(array $orderedStops): float
     {
         return $this->closedTourLength($orderedStops, fn ($a, $b) => DistanceHelper::betweenPoints($a, $b));
-    }
-
-    public function tourTimeSeconds(array $orderedStops, float $averageSpeedKmh, int $serviceSecondsPerStop): float
-    {
-        $speed = max($averageSpeedKmh, 1.0);
-        $travelTime = static fn (array $a, array $b): float => (DistanceHelper::betweenPoints($a, $b) / $speed) * 3600.0;
-
-        return $this->closedTourLength($orderedStops, $travelTime) + count($orderedStops) * $serviceSecondsPerStop;
     }
 
     /**
@@ -117,119 +86,6 @@ final class RouteOptimizer
         return $candidates[0];
     }
 
-    /**
-     * @param  Collection<int, Order>  $orders
-     * @param  callable(array, array): float  $travelTimeSeconds
-     * @return array<int, Order>
-     */
-    private function cheapestInsertionByTime(Collection $orders, callable $travelTimeSeconds, int $serviceSecondsPerStop): array
-    {
-        $remaining = $orders->values()->all();
-        if ($remaining === []) {
-            return [];
-        }
-
-        $seedIdx = 0;
-        $seedBestTime = INF;
-        foreach ($remaining as $idx => $order) {
-            $travel = $travelTimeSeconds($this->depotPoint(), $this->orderPoint($order));
-            if ($travel + self::TWO_OPT_EPSILON < $seedBestTime) {
-                $seedBestTime = $travel;
-                $seedIdx = $idx;
-                continue;
-            }
-
-            if (abs($travel - $seedBestTime) <= self::TWO_OPT_EPSILON
-                && $order->priority->rank() > $remaining[$seedIdx]->priority->rank()) {
-                $seedIdx = $idx;
-            }
-        }
-
-        $seed = $remaining[$seedIdx];
-        array_splice($remaining, $seedIdx, 1);
-        $tour = [$seed];
-
-        while ($remaining !== []) {
-            $bestIncrease = INF;
-            $bestOrder = null;
-            $bestOrderIdx = null;
-            $bestPosition = 0;
-
-            foreach ($remaining as $idx => $candidate) {
-                $n = count($tour);
-                for ($pos = 0; $pos <= $n; $pos++) {
-                    $increase = $this->marginalInsertionTimeSeconds(
-                        $tour,
-                        $candidate,
-                        $pos,
-                        $travelTimeSeconds,
-                        $serviceSecondsPerStop
-                    );
-
-                    if ($increase + self::TWO_OPT_EPSILON < $bestIncrease) {
-                        $bestIncrease = $increase;
-                        $bestOrder = $candidate;
-                        $bestOrderIdx = $idx;
-                        $bestPosition = $pos;
-                    }
-                }
-            }
-
-            if (! $bestOrder instanceof Order || $bestOrderIdx === null) {
-                break;
-            }
-
-            array_splice($tour, $bestPosition, 0, [$bestOrder]);
-            unset($remaining[$bestOrderIdx]);
-            $remaining = array_values($remaining);
-        }
-
-        return $tour;
-    }
-
-    /**
-     * @param  array<int, Order>  $tour
-     */
-    private function marginalInsertionTimeSeconds(
-        array $tour,
-        Order $candidate,
-        int $position,
-        callable $travelTimeSeconds,
-        int $serviceSecondsPerStop
-    ): float {
-        $before = $this->tourTimeWithService($tour, $travelTimeSeconds, $serviceSecondsPerStop);
-        $trial = $tour;
-        array_splice($trial, $position, 0, [$candidate]);
-
-        $after = $this->tourTimeWithService($trial, $travelTimeSeconds, $serviceSecondsPerStop);
-
-        return $after - $before;
-    }
-
-    /**
-     * @param  array<int, Order>  $tour
-     * @param  callable(array, array): float  $travelTimeSeconds
-     */
-    private function tourTimeWithService(array $tour, callable $travelTimeSeconds, int $serviceSecondsPerStop): float
-    {
-        if ($tour === []) {
-            return 0.0;
-        }
-
-        $prev = $this->depotPoint();
-        $total = 0.0;
-
-        foreach ($tour as $order) {
-            $p = $this->orderPoint($order);
-            $total += $travelTimeSeconds($prev, $p);
-            $total += $serviceSecondsPerStop;
-            $prev = $p;
-        }
-
-        $total += $travelTimeSeconds($prev, $this->depotPoint());
-
-        return $total;
-    }
 
     /**
      * @param  array<int, Order>  $tour

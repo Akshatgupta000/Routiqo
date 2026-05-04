@@ -59,7 +59,6 @@ class RouteController extends Controller
                 'delivery_center_id' => $row['delivery_center_id'],
                 'vehicle_id' => $row['vehicle_id'],
                 'shortest_distance_route' => (new RouteOptimizationResource($row['shortest_distance_route']))->toArray($request),
-                'fastest_time_route' => (new RouteOptimizationResource($row['fastest_time_route']))->toArray($request),
             ];
         }, $comparisons);
 
@@ -87,7 +86,6 @@ class RouteController extends Controller
                 'delivery_center_id' => $row['delivery_center_id'],
                 'vehicle_id' => $row['vehicle_id'],
                 'shortest_distance_route' => (new RouteOptimizationResource($row['shortest_distance_route']))->toArray($request),
-                'fastest_time_route' => (new RouteOptimizationResource($row['fastest_time_route']))->toArray($request),
             ];
         }, $comparisons);
 

@@ -97,7 +97,6 @@ export function AppProvider({ children }) {
   const [comparisons, setComparisons] = useState([])
   const [activeRouteBase, setActiveRouteBase] = useState(null)
   const [activeMultiRoutes, setActiveMultiRoutes] = useState([])
-  const [activeProfile, setActiveProfile] = useState('shortest')
   const [selectedCenterId, setSelectedCenterId] = useState(null)
   const [activeOrderId, setActiveOrderId] = useState(null)
   const [loading, setLoading] = useState({ global: false })
@@ -359,20 +358,13 @@ export function AppProvider({ children }) {
     }
   }, [selectedCenterId, centers, mapFocus])
 
-  const attachComparison = useCallback((route, profile, comparisonsList) => {
-    if (!route || !comparisonsList?.length) return route
-    const batch = route.comparison_batch_id
-    if (!batch) return route
-    const row = comparisonsList.find((c) => c.comparison_batch_id === batch)
-    if (!row) return route
-    const other =
-      profile === 'shortest' ? row.fastest_time_route : row.shortest_distance_route
-    return { ...route, _comparisonRoute: other }
+  const attachComparison = useCallback((route) => {
+    return route
   }, [])
 
   const activeRoute = useMemo(
-    () => attachComparison(activeRouteBase, activeProfile, comparisons),
-    [activeRouteBase, activeProfile, comparisons, attachComparison]
+    () => attachComparison(activeRouteBase),
+    [activeRouteBase, attachComparison]
   )
 
   const vehiclePosition = useMemo(
@@ -427,9 +419,7 @@ export function AppProvider({ children }) {
         toast('No pending orders in this hub\'s zone.', 'info')
         return
       }
-      const allPrimaryRoutes = comps.map(c => 
-        activeProfile === 'shortest' ? c.shortest_distance_route : c.fastest_time_route
-      )
+      const allPrimaryRoutes = comps.map(c => c.shortest_distance_route)
       
       setActiveMultiRoutes(
         allPrimaryRoutes.map((r) => normalizeRouteForSimulation(stripMeta(r)))
@@ -457,7 +447,6 @@ export function AppProvider({ children }) {
     }
   }, [
     selectedCenterId,
-    activeProfile,
     refreshOrders,
     refreshRoutes,
     toast,
@@ -581,8 +570,6 @@ export function AppProvider({ children }) {
       activeMultiRoutes,
       setActiveMultiRoutes,
       setActiveRouteBase,
-      activeProfile,
-      setActiveProfile,
       selectedCenterId,
       setSelectedCenterId,
       activeOrderId,
@@ -637,7 +624,6 @@ export function AppProvider({ children }) {
       activeMultiRoutes,
       setActiveMultiRoutes,
       setActiveRouteBase,
-      activeProfile,
       selectedCenterId,
       activeOrderId,
       loading,

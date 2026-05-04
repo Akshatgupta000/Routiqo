@@ -20,8 +20,6 @@ export default function Dashboard() {
     loading,
     generateRoutesAction,
     selectedCenterId,
-    activeProfile,
-    setActiveProfile,
     showZones,
     setShowZones,
   } = useApp()
@@ -71,30 +69,7 @@ export default function Dashboard() {
                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showZones ? 'left-4.5' : 'left-0.5'}`} />
                </button>
             </div>
-            <div className="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
-              <button
-                type="button"
-                className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                  activeProfile === 'shortest'
-                    ? 'bg-white text-zinc-900 shadow dark:bg-zinc-950 dark:text-white'
-                    : 'text-zinc-500'
-                }`}
-                onClick={() => setActiveProfile('shortest')}
-              >
-                Shortest
-              </button>
-              <button
-                type="button"
-                className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                  activeProfile === 'fastest'
-                    ? 'bg-white text-zinc-900 shadow dark:bg-zinc-950 dark:text-white'
-                    : 'text-zinc-500'
-                }`}
-                onClick={() => setActiveProfile('fastest')}
-              >
-                Fastest
-              </button>
-            </div>
+
           </div>
           <Button
             className="mt-3 w-full"

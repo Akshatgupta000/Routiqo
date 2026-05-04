@@ -263,9 +263,6 @@ class RouteService
                 $distanceTour = (new RouteOptimizer((float) $center->latitude, (float) $center->longitude))
                     ->buildShortestDistanceTour($bucket);
 
-                $timeTour = (new RouteOptimizer((float) $center->latitude, (float) $center->longitude))
-                    ->buildFastestTimeTour($bucket, (float) $vehicle->average_speed, self::SERVICE_SECONDS_PER_STOP);
-
                 $routeDistance = $this->persistOptimizedRoute(
                     $center,
                     $vehicle,
@@ -275,25 +272,14 @@ class RouteService
                     $batchId
                 );
 
-                $routeTime = $this->persistOptimizedRoute(
-                    $center,
-                    $vehicle,
-                    $timeTour,
-                    $departureAt,
-                    OptimizationProfile::FastestTime,
-                    $batchId
-                );
-
                 $comparisons[] = [
                     'comparison_batch_id' => $batchId,
                     'delivery_center_id' => $center->id,
                     'vehicle_id' => $vehicle->id,
                     'shortest_distance_route' => $routeDistance->fresh(['deliveryCenter', 'vehicle', 'routeStops.order']),
-                    'fastest_time_route' => $routeTime->fresh(['deliveryCenter', 'vehicle', 'routeStops.order']),
                 ];
 
                 $this->forgetRouteCache($routeDistance->id);
-                $this->forgetRouteCache($routeTime->id);
             }
         });
 
