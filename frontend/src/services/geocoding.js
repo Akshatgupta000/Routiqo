@@ -12,7 +12,7 @@ export async function geocodeAddress(query) {
     const response = await fetch(url, {
       headers: {
         'Accept-Language': 'en',
-        'User-Agent': 'LogiRoute-AI-Optimization-App',
+        Accept: 'application/json',
       },
     })
 

@@ -53,6 +53,9 @@ class RouteService
         $comparisons = [];
 
         foreach ($centers as $center) {
+            // Auto-capture unassigned orders in the center's area before generating
+            $this->captureNearbyOrders($center);
+
             $batch = $this->processCenter($center, $departureAt);
             $comparisons = array_merge($comparisons, $batch);
         }
@@ -129,6 +132,12 @@ class RouteService
 
             foreach ($planned as $route) {
                 $this->forgetRouteCache($route->id);
+                
+                // Mark vehicle as available again
+                if ($route->vehicle) {
+                    $route->vehicle->update(['is_available' => true]);
+                }
+                
                 $this->routes->deleteRoute($route);
             }
         });
@@ -169,6 +178,11 @@ class RouteService
                     $this->forgetRouteCache($sibling->id);
                     $this->routes->deleteRoute($sibling);
                 }
+            }
+
+            // Mark vehicle as busy ONLY when starting
+            if ($route->vehicle) {
+                $route->vehicle->update(['is_available' => false]);
             }
 
             $this->routes->update($route, [
@@ -222,6 +236,14 @@ class RouteService
                     'status' => RouteStatus::Completed,
                     'next_stop_sequence' => null,
                 ]);
+
+                // Reset vehicle availability
+                if ($route->vehicle) {
+                    $route->vehicle->update([
+                        'is_available' => true,
+                        'current_load' => 0
+                    ]);
+                }
             } else {
                 $this->routes->update($route, [
                     'next_stop_sequence' => $next + 1,
@@ -252,6 +274,14 @@ class RouteService
                 'status' => RouteStatus::Completed,
                 'next_stop_sequence' => null,
             ]);
+
+            // Reset vehicle availability
+            if ($route->vehicle) {
+                $route->vehicle->update([
+                    'is_available' => true,
+                    'current_load' => 0
+                ]);
+            }
         });
 
         $this->forgetRouteCache($routeId);
@@ -488,9 +518,22 @@ class RouteService
 
         $buckets = [];
         $cursor = 0;
+        $totalOrders = $sorted->count();
+        $totalVehicles = $vehicles->count();
 
-        foreach ($vehicles->sortBy('id')->values() as $vehicle) {
-            $slice = $sorted->slice($cursor, $vehicle->capacity)->values();
+        // Calculate a target per-vehicle load to keep things balanced
+        $targetPerVehicle = (int) ceil($totalOrders / $totalVehicles);
+
+        foreach ($vehicles->sortBy('id')->values() as $index => $vehicle) {
+            $remainingOrders = $totalOrders - $cursor;
+            $remainingVehicles = $totalVehicles - $index;
+            
+            // Adjust target for remaining vehicles
+            $currentAvailableTarget = (int) ceil($remainingOrders / $remainingVehicles);
+            
+            $take = min($vehicle->capacity, $currentAvailableTarget);
+            $slice = $sorted->slice($cursor, $take)->values();
+            
             $cursor += $slice->count();
             $buckets[$vehicle->id] = $slice;
         }
@@ -539,5 +582,35 @@ class RouteService
         }
 
         return [];
+    }
+    private function captureNearbyOrders(DeliveryCenter $center, float $radiusKm = 10.0): void
+    {
+        // Find all pending orders that are NOT yet assigned to any center
+        $unassigned = Order::query()
+            ->where('status', OrderStatus::Pending)
+            ->whereNull('delivery_center_id')
+            ->get();
+
+        foreach ($unassigned as $order) {
+            $dist = \App\Helpers\DistanceHelper::kmBetween(
+                (float) $center->latitude,
+                (float) $center->longitude,
+                (float) $order->latitude,
+                (float) $order->longitude
+            );
+
+            if ($dist <= $radiusKm) {
+                $this->orders->update($order, [
+                    'delivery_center_id' => $center->id,
+                    'status' => OrderStatus::Assigned,
+                ]);
+                
+                Log::info('order.captured', [
+                    'order_id' => $order->id,
+                    'center_id' => $center->id,
+                    'distance_km' => $dist
+                ]);
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@ import MapView from '../components/Map/MapView'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
 import Spinner from '../components/UI/Spinner'
+import FleetOverview from '../components/Route/FleetOverview'
 import ActiveRouteSummary from '../components/Route/ActiveRouteSummary'
 import RouteDetailsPanel from '../components/Route/RouteDetailsPanel'
 import SimulationControls from '../components/Route/SimulationControls'
@@ -47,10 +48,6 @@ export default function Dashboard() {
           </div>
         ) : (
           <MapView
-            centers={centers}
-            orders={ordersOnMap}
-            activeRoute={activeRoute}
-            vehiclePosition={vehiclePosition}
             showOrderPins={true}
           />
         )}
@@ -60,7 +57,7 @@ export default function Dashboard() {
         <Card className="p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
-              Route optimization
+              Fleet optimization
             </h2>
             <div className="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
               <button
@@ -88,20 +85,20 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-            Generates paired routes for the selected center. Green line = active profile; gray dashed =
-            alternate comparison.
+            Optimizes delivery routes across the entire available fleet. Each vehicle receives a balanced cluster of orders based on geographical proximity.
           </p>
           <Button
             className="mt-4 w-full"
             disabled={loading.generate || !selectedCenterId}
-            onClick={generateRoutesAction}
+            onClick={() => generateRoutesAction()}
           >
-            {loading.generate ? 'Generating…' : 'Generate route'}
+            {loading.generate ? 'Generating…' : 'Optimize Fleet Routes'}
           </Button>
         </Card>
 
         <DeliveryInput />
 
+        <FleetOverview />
         <ActiveRouteSummary route={activeRoute} />
         <SimulationControls />
         <RouteDetailsPanel route={activeRoute} />

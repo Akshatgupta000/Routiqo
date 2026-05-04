@@ -11,7 +11,7 @@ import AddCenterModal from '../components/Forms/AddCenterModal'
 import AddVehicleModal from '../components/Forms/AddVehicleModal'
 
 export default function Orders() {
-  const { centers, orders, refreshOrders, refreshRoutes, toast } = useApp()
+  const { centers, orders, refreshOrders, refreshRoutes, refreshVehicles, toast } = useApp()
   const [filter, setFilter] = useState('')
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState(false)
@@ -53,7 +53,17 @@ export default function Orders() {
     {
       key: 'vehicle',
       label: 'Vehicle',
-      render: (r) => r.vehicle?.name ?? 'Unassigned',
+      render: (r) => {
+        if (!r.vehicle) return <span className="text-zinc-400 text-xs italic">Unassigned</span>
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-base">🚚</span>
+            <span className="font-mono text-xs font-bold tracking-wider text-zinc-800 dark:text-zinc-200">
+              {r.vehicle.vehicle_number || r.vehicle.name}
+            </span>
+          </div>
+        )
+      },
     },
     {
       key: 'actions',
@@ -101,6 +111,7 @@ export default function Orders() {
       await api.assignOrder(id)
       toast('Order assigned successfully')
       refreshOrders(filter ? { status: filter } : {})
+      refreshVehicles()
     } catch (err) {
       const errorData = err?.response?.data?.errors || {}
       
@@ -135,6 +146,7 @@ export default function Orders() {
       toast('Order marked as delivered')
       refreshOrders(filter ? { status: filter } : {})
       refreshRoutes()
+      refreshVehicles()
     } catch (err) {
       toast('Failed to update status', 'error')
     }

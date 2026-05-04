@@ -18,6 +18,7 @@ Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 Route::post('/vehicles', [VehicleController::class, 'store']);
 Route::get('/vehicles', [VehicleController::class, 'index']);
 Route::patch('/vehicles/{id}', [VehicleController::class, 'update']);
+Route::post('/vehicles/reset-fleet', [VehicleController::class, 'resetFleet']);
 
 Route::post('/routes/generate', [RouteController::class, 'generate']);
 Route::post('/routes/regenerate/{center_id}', [RouteController::class, 'regenerate']);

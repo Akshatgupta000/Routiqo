@@ -107,14 +107,22 @@ class OrderService
 
         $order = $this->orders->update($order, ['status' => $next]);
 
-        // If delivered, release the vehicle
+        // If delivered, release the vehicle only if it has no more pending orders in its current route
         if ($next === OrderStatus::Delivered && $order->vehicle_id) {
-            $vehicle = \App\Models\Vehicle::find($order->vehicle_id);
-            if ($vehicle) {
-                $vehicle->update([
-                    'is_available' => true,
-                    'current_load' => 0
-                ]);
+            $remaining = \App\Models\Order::query()
+                ->where('vehicle_id', $order->vehicle_id)
+                ->where('status', '!=', OrderStatus::Delivered)
+                ->where('_id', '!=', $order->id) // Use _id for MongoDB
+                ->count();
+
+            if ($remaining === 0) {
+                $vehicle = \App\Models\Vehicle::find($order->vehicle_id);
+                if ($vehicle) {
+                    $vehicle->update([
+                        'is_available' => true,
+                        'current_load' => 0
+                    ]);
+                }
             }
         }
 

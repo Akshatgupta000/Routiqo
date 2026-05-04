@@ -80,6 +80,11 @@ export async function updateVehicle(id, payload) {
   return data
 }
 
+export async function resetFleet(payload = {}) {
+  const { data } = await client.post('/vehicles/reset-fleet', payload)
+  return data
+}
+
 export async function generateRoute(payload = {}) {
   const { data } = await client.post('/routes/generate', payload)
   return data

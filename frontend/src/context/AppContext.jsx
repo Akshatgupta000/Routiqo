@@ -5,9 +5,11 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from 'react'
 import * as api from '../services/api'
 import { computeVehiclePosition } from '../utils/routeMap'
+import { buildPlaybackPathForRoute } from '../utils/simplePlaybackPath'
 
 export const AppContext = createContext(null)
 
@@ -41,6 +43,7 @@ export function AppProvider({ children }) {
   const [routesList, setRoutesList] = useState([])
   const [comparisons, setComparisons] = useState([])
   const [activeRouteBase, setActiveRouteBase] = useState(null)
+  const [activeMultiRoutes, setActiveMultiRoutes] = useState([])
   const [activeProfile, setActiveProfile] = useState('shortest')
   const [selectedCenterId, setSelectedCenterId] = useState(null)
   const [activeOrderId, setActiveOrderId] = useState(null)
@@ -49,8 +52,14 @@ export function AppProvider({ children }) {
   const [toasts, setToasts] = useState([])
   const [bootstrapError, setBootstrapError] = useState(null)
   const [draftDeliveries, setDraftDeliveries] = useState([])
-  const [isSimulating, setIsSimulating] = useState(false)
-  const [simProgress, setSimProgress] = useState(0)
+  /** Map animation: idle | running | paused | completed */
+  const [simulationPhase, setSimulationPhase] = useState('idle')
+  /** Per-vehicle polyline used for simple step animation (see buildPlaybackPathForRoute). */
+  const [routePlaybackCoords, setRoutePlaybackCoords] = useState(null)
+  /** Per-vehicle index along routePlaybackCoords[vehicleId]. */
+  const [routePlaybackStep, setRoutePlaybackStep] = useState({})
+  const playbackPathsRef = useRef({})
+  const playbackIntervalRef = useRef(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -66,9 +75,14 @@ export function AppProvider({ children }) {
     let safeMessage = String(message)
     if (typeof message === 'object' && message !== null) {
       try {
-        safeMessage = message.message || JSON.stringify(message)
-      } catch {
-        safeMessage = '[Complex Error Object]'
+        if (message.message) {
+          safeMessage = message.message
+        } else {
+          safeMessage = JSON.stringify(message)
+        }
+      } catch (err) {
+        safeMessage = '[Non-serializable Object]'
+        console.error('Toast serialization failed', err)
       }
     }
       
@@ -77,6 +91,49 @@ export function AppProvider({ children }) {
       setToasts((t) => t.filter((x) => x.id !== id))
     }, 4500)
   }, [])
+
+  const clearPlaybackTimer = useCallback(() => {
+    if (playbackIntervalRef.current != null) {
+      window.clearInterval(playbackIntervalRef.current)
+      playbackIntervalRef.current = null
+    }
+  }, [])
+
+  const runPlaybackTimer = useCallback(() => {
+    clearPlaybackTimer()
+    playbackIntervalRef.current = window.setInterval(() => {
+      setRoutePlaybackStep((prev) => {
+        const paths = playbackPathsRef.current
+        if (!paths || !Object.keys(paths).length) return prev
+
+        const next = { ...prev }
+        let allDone = true
+
+        for (const vid of Object.keys(paths)) {
+          const pts = paths[vid]
+          if (!pts || pts.length < 2) continue
+          const max = pts.length - 1
+          const cur = next[vid] ?? 0
+          if (cur < max) {
+            next[vid] = cur + 1
+            allDone = false
+          }
+        }
+
+        if (allDone) {
+          clearPlaybackTimer()
+          window.setTimeout(() => {
+            setSimulationPhase('completed')
+            toast('Vehicles reached the end of the route.')
+          }, 0)
+        }
+
+        return next
+      })
+    }, 180)
+  }, [clearPlaybackTimer, toast])
+
+  useEffect(() => () => clearPlaybackTimer(), [clearPlaybackTimer])
 
   const dismissToast = useCallback((id) => {
     setToasts((t) => t.filter((x) => x.id !== id))
@@ -97,7 +154,7 @@ export function AppProvider({ children }) {
     setLoading((l) => ({ ...l, addCenter: true }))
     try {
       const newCenter = await api.createCenter(payload)
-      const list = await refreshCenters()
+      await refreshCenters()
       
       // Auto-select and focus the new center
       setSelectedCenterId(newCenter.id)
@@ -117,10 +174,6 @@ export function AppProvider({ children }) {
       setLoading((l) => ({ ...l, addCenter: false }))
     }
   }, [refreshCenters, toast])
-
-  const fetchOSRMPath = useCallback(async (route) => {
-    // Legacy single-route fetch removed in favor of backend geometry persistence.
-  }, [])
 
   const refreshOrders = useCallback(async (filters = {}) => {
     const data = await api.getOrders({ per_page: 100, ...filters })
@@ -198,12 +251,26 @@ export function AppProvider({ children }) {
     setActiveRouteBase(stripMeta(route))
   }, [])
 
+  const resetFleetSimulation = useCallback(
+    ({ silent = false } = {}) => {
+      clearPlaybackTimer()
+      playbackPathsRef.current = {}
+      setRoutePlaybackCoords(null)
+      setRoutePlaybackStep({})
+      setSimulationPhase('idle')
+      if (!silent) toast('Fleet simulation reset.')
+    },
+    [toast, clearPlaybackTimer]
+  )
+
   const resetSelection = useCallback(() => {
+    resetFleetSimulation({ silent: true })
     setSelectedCenterId(null)
     setActiveRouteBase(null)
+    setActiveMultiRoutes([])
     setActiveOrderId(null)
     setMapFocus(null)
-  }, [])
+  }, [resetFleetSimulation])
 
   const generateRoutesAction = useCallback(async (overrideCenterId = null) => {
     const centerToUse = overrideCenterId || selectedCenterId
@@ -211,23 +278,36 @@ export function AppProvider({ children }) {
       centerToUse != null ? { delivery_center_id: centerToUse } : {}
     setLoading((l) => ({ ...l, generate: true }))
     try {
-      const data = await api.generateRoute(payload)
+      let data
+      if (activeMultiRoutes.length > 0 && centerToUse) {
+        data = await api.regenerateRoutes(centerToUse)
+      } else {
+        data = await api.generateRoute(payload)
+      }
+      
       const comps = data?.comparisons ?? []
       setComparisons(comps)
       if (!comps.length) {
         toast('No routes were generated.', 'error')
         return
       }
-      const primary =
-        activeProfile === 'shortest'
-          ? comps[0].shortest_distance_route
-          : comps[0].fastest_time_route
+      const allPrimaryRoutes = comps.map(c => 
+        activeProfile === 'shortest' ? c.shortest_distance_route : c.fastest_time_route
+      )
       
-      const stripped = stripMeta(primary)
-      setActiveRouteBase(stripped)
+      setActiveMultiRoutes(allPrimaryRoutes.map(stripMeta))
+      if (allPrimaryRoutes.length > 0) {
+        setActiveRouteBase(stripMeta(allPrimaryRoutes[0]))
+      }
+      
+      // Keep first one as the main active route for backwards compatibility / simulation
+      if (allPrimaryRoutes.length > 0) {
+        setActiveRouteBase(stripMeta(allPrimaryRoutes[0]))
+      }
       
       await Promise.all([refreshOrders(), refreshRoutes()])
-      toast('Routes generated and optimized.')
+      resetFleetSimulation({ silent: true })
+      toast(`Routes generated for ${allPrimaryRoutes.length} vehicles.`)
     } catch (e) {
       const msg =
         e?.response?.data?.errors?.delivery_center_id?.[0] ||
@@ -238,7 +318,15 @@ export function AppProvider({ children }) {
     } finally {
       setLoading((l) => ({ ...l, generate: false }))
     }
-  }, [selectedCenterId, activeProfile, refreshOrders, refreshRoutes, toast, resetSelection])
+  }, [
+    selectedCenterId,
+    activeProfile,
+    refreshOrders,
+    refreshRoutes,
+    toast,
+    activeMultiRoutes.length,
+    resetFleetSimulation,
+  ])
 
   const selectRouteFromList = useCallback((route) => {
     const stripped = stripMeta(route)
@@ -254,24 +342,75 @@ export function AppProvider({ children }) {
     setDraftDeliveries((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  const startSimulation = useCallback(() => {
-    const currentOSRM = activeRoute?.geometry || []
-    if (!currentOSRM.length) return
-    setIsSimulating(true)
-    setSimProgress(0)
-    
-    let current = 0
-    const interval = setInterval(() => {
-      current += 1
-      if (current >= currentOSRM.length) {
-        clearInterval(interval)
-        setIsSimulating(false)
-        toast('Delivery simulation completed!')
-      } else {
-        setSimProgress(current)
+  const startFleetSimulation = useCallback(() => {
+    const routesToSimulate =
+      activeMultiRoutes.length > 0 ? activeMultiRoutes : activeRoute ? [activeRoute] : []
+
+    if (!routesToSimulate.length) return
+
+    /** @type {Record<string, Array<[number, number]>>} */
+    const paths = {}
+
+    for (const r of routesToSimulate) {
+      const vid = String(r?.vehicle_id ?? r.vehicle?.id ?? '')
+      if (!vid || vid === 'undefined') continue
+      const pts = buildPlaybackPathForRoute(r, centers)
+      if (pts.length >= 2) {
+        paths[vid] = pts
       }
-    }, 100) // Speed of simulation
-  }, [activeRoute, toast, resetSelection])
+    }
+
+    const keys = Object.keys(paths)
+
+    if (keys.length === 0) {
+      toast(
+        'No path to animate. Optimize routes again, or check that stops have latitude/longitude.',
+        'error'
+      )
+      return
+    }
+
+    clearPlaybackTimer()
+    playbackPathsRef.current = paths
+    setRoutePlaybackCoords(paths)
+
+    const initialSteps = {}
+    keys.forEach((k) => {
+      initialSteps[k] = 0
+    })
+    setRoutePlaybackStep(initialSteps)
+
+    setSimulationPhase('running')
+    runPlaybackTimer()
+    toast(`Moving ${keys.length} vehicle(s) along the route.`)
+  }, [activeMultiRoutes, activeRoute, centers, toast, clearPlaybackTimer, runPlaybackTimer])
+
+  const pauseFleetSimulation = useCallback(() => {
+    clearPlaybackTimer()
+    setSimulationPhase((p) => (p === 'running' ? 'paused' : p))
+  }, [clearPlaybackTimer])
+
+  const resumeFleetSimulation = useCallback(() => {
+    setSimulationPhase((p) => {
+      if (p !== 'paused') return p
+      window.setTimeout(() => runPlaybackTimer(), 0)
+      return 'running'
+    })
+  }, [runPlaybackTimer])
+
+  const resetFleetAction = useCallback(async (centerId = null) => {
+    setLoading((l) => ({ ...l, resetFleet: true }))
+    try {
+      const payload = centerId ? { delivery_center_id: centerId } : {}
+      await api.resetFleet(payload)
+      await refreshVehicles()
+      toast('Fleet status reset to available.')
+    } catch {
+      toast('Failed to reset fleet.', 'error')
+    } finally {
+      setLoading((l) => ({ ...l, resetFleet: false }))
+    }
+  }, [refreshVehicles, toast])
 
   const clearDraftDeliveries = useCallback(() => {
     setDraftDeliveries([])
@@ -290,6 +429,8 @@ export function AppProvider({ children }) {
       setComparisons,
       activeRoute,
       setActiveRoute,
+      activeMultiRoutes,
+      setActiveRouteBase,
       activeProfile,
       setActiveProfile,
       selectedCenterId,
@@ -297,43 +438,7 @@ export function AppProvider({ children }) {
       activeOrderId,
       setActiveOrderId,
       loading,
-      toasts,
-      dismissToast,
-      toast,
-      refreshCenters,
-      refreshOrders,
-      refreshVehicles,
-      refreshRoutes,
-      bootstrap,
-      generateRoutesAction,
-      selectRouteFromList,
-      vehiclePosition,
-      bootstrapError,
-      setMapFocus,
-      addCenterAction,
-      draftDeliveries,
-      addDraftDelivery,
-      removeDraftDelivery,
-      clearDraftDeliveries,
-      isSimulating,
-      simProgress,
-      startSimulation,
-      resetSelection,
-    }),
-    [
-      theme,
-      toggleTheme,
-      centers,
-      orders,
-      vehicles,
-      routesList,
-      comparisons,
-      activeRoute,
-      setActiveRoute,
-      activeProfile,
-      selectedCenterId,
-      activeOrderId,
-      loading,
+      setLoading,
       toasts,
       dismissToast,
       toast,
@@ -347,15 +452,68 @@ export function AppProvider({ children }) {
       vehiclePosition,
       bootstrapError,
       mapFocus,
+      setMapFocus,
       addCenterAction,
       draftDeliveries,
       addDraftDelivery,
       removeDraftDelivery,
       clearDraftDeliveries,
-      isSimulating,
-      simProgress,
-      startSimulation,
+      simulationPhase,
+      isSimulating: simulationPhase === 'running',
+      routePlaybackCoords,
+      routePlaybackStep,
+      startFleetSimulation,
+      pauseFleetSimulation,
+      resumeFleetSimulation,
+      resetFleetSimulation,
       resetSelection,
+      resetFleetAction,
+    }),
+    [
+      theme,
+      toggleTheme,
+      centers,
+      orders,
+      vehicles,
+      routesList,
+      comparisons,
+      activeRoute,
+      setActiveRoute,
+      activeMultiRoutes,
+      setActiveRouteBase,
+      activeProfile,
+      selectedCenterId,
+      activeOrderId,
+      loading,
+      setLoading,
+      toasts,
+      dismissToast,
+      toast,
+      refreshCenters,
+      refreshOrders,
+      refreshVehicles,
+      refreshRoutes,
+      bootstrap,
+      generateRoutesAction,
+      selectRouteFromList,
+      vehiclePosition,
+      bootstrapError,
+      mapFocus,
+      setMapFocus,
+      addCenterAction,
+      draftDeliveries,
+      addDraftDelivery,
+      removeDraftDelivery,
+      clearDraftDeliveries,
+      simulationPhase,
+      routePlaybackCoords,
+      routePlaybackStep,
+      startFleetSimulation,
+      pauseFleetSimulation,
+      resumeFleetSimulation,
+      resetFleetSimulation,
+      resetSelection,
+      resetFleetAction,
     ]
   )
 

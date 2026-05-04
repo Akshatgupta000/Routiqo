@@ -37,7 +37,7 @@ export default function AddressAutocomplete({
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`,
         {
           headers: {
-            'User-Agent': 'LogiRouteApp/1.0',
+            Accept: 'application/json',
           },
         }
       )

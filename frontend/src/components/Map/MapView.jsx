@@ -1,11 +1,21 @@
-import React, { useMemo, useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents } from 'react-leaflet'
+import React, { useMemo, useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { centerIcon, orderIcon, numberedStopIcon, vehicleIcon } from './mapIcons'
 import { stopLatLng, getDistance } from '../../utils/coords'
+import { extractRouteCoordinates } from '../../utils/routeGeometry'
 import { useApp } from '../../context/AppContext'
 import * as api from '../../services/api'
+
+const ROUTE_COLORS = [
+  { primary: '#2563eb', glow: '#60a5fa' }, // Blue
+  { primary: '#10b981', glow: '#34d399' }, // Emerald
+  { primary: '#8b5cf6', glow: '#a78bfa' }, // Violet
+  { primary: '#f59e0b', glow: '#fbbf24' }, // Amber
+  { primary: '#ef4444', glow: '#f87171' }, // Red
+  { primary: '#06b6d4', glow: '#22d3ee' }, // Cyan
+]
 
 function FitBounds({ bounds }) {
   const map = useMap()
@@ -51,27 +61,32 @@ function FlyToFocus({ focus }) {
 }
 
 export default function MapView({
-  centers = [],
-  orders = [],
-  activeRoute,
-  vehiclePosition,
   showOrderPins = true,
 }) {
   const { 
     mapFocus, 
     draftDeliveries, 
     routesList, 
+    selectedCenterId,
     setSelectedCenterId, 
     generateRoutesAction, 
     loading, 
-    isSimulating, 
-    simProgress,
+    simulationPhase,
     toast,
     setMapFocus,
-    refreshOrders,
+    activeMultiRoutes,
+    setActiveRouteBase,
     activeOrderId,
     setActiveOrderId,
-    resetSelection
+    resetSelection,
+    vehicles,
+    centers,
+    orders,
+    activeRoute,
+    vehiclePosition,
+    refreshOrders,
+    routePlaybackCoords,
+    routePlaybackStep,
   } = useApp()
 
   const handleOrderClick = async (order) => {
@@ -136,8 +151,8 @@ export default function MapView({
       }
     })
     routesList.forEach((r) => {
-      if (r.status !== 'completed' && r.geometry) {
-        r.geometry.forEach((p) => b.extend(p))
+      if (r.status !== 'completed') {
+        extractRouteCoordinates(r).forEach((p) => b.extend(p))
       }
     })
     if (vehiclePosition) {
@@ -146,19 +161,20 @@ export default function MapView({
     return b.isValid() ? b : null
   }, [centers, orders, draftDeliveries, routesList, vehiclePosition])
 
-  const mapKey = activeRoute?.route_id ?? 'map-default'
+  /** Stable key avoids full map teardown on route selection (fixes polyline flicker & lost GL state). */
+  const mapInstanceKey = 'logiroute-map'
 
   return (
     <div className="relative h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
       <MapContainer
-        key={mapKey}
+        key={mapInstanceKey}
         center={[20.5937, 78.9629]}
         zoom={5}
         className="z-0 h-full w-full min-h-[320px] sm:min-h-0"
         scrollWheelZoom
         style={{ height: '100%', minHeight: '100%' }}
       >
-        <MapResize routeId={mapKey} />
+        <MapResize routeId={mapInstanceKey} />
         <FlyToFocus focus={mapFocus} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
@@ -166,6 +182,20 @@ export default function MapView({
         />
         <MapClickHandler onMapClick={() => setActiveOrderId(null)} />
         {bounds && <FitBounds bounds={bounds} />}
+        {(simulationPhase === 'running' || simulationPhase === 'paused') && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] bg-zinc-900/90 text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 border border-white/10 backdrop-blur-md">
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></span>
+            </div>
+            <span className="text-xs font-bold uppercase tracking-widest">
+              {simulationPhase === 'paused'
+                ? 'Fleet playback paused'
+                : 'Fleet playback running'}
+            </span>
+          </div>
+        )}
 
         <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
           <button
@@ -187,15 +217,100 @@ export default function MapView({
           if (position[0] === 0 && position[1] === 0) return null
 
           return (
+            <React.Fragment key={`c-group-${c.id}`}>
+              <Marker
+                position={position}
+                icon={centerIcon()}
+                eventHandlers={{
+                  click: () => {
+                    setSelectedCenterId(c.id)
+                    generateRoutesAction(c.id)
+                  }
+                }}
+              >
+                <Popup>
+                  <strong>{c.name}</strong>
+                  <br />
+                  Center #{c.id}
+                </Popup>
+              </Marker>
+              
+              {/* Show all bold blue OSRM routes belonging to this center when clicked */}
+              {selectedCenterId === c.id && routesList
+                .filter((r) => {
+                  const pts = extractRouteCoordinates(r)
+                  return (
+                    (r.delivery_center?.id === c.id || r.delivery_center_id === c.id) &&
+                    pts.length > 1 &&
+                    r.status !== 'completed'
+                  )
+                })
+                .map((r) => {
+                  const coords = extractRouteCoordinates(r)
+                  return (
+                  <React.Fragment key={`hub-route-${r.route_id}`}>
+                    {/* Glow layer */}
+                    <Polyline
+                      positions={coords}
+                      pathOptions={{
+                        color: '#60a5fa',
+                        weight: 10,
+                        opacity: 0.25,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                      }}
+                    />
+                    {/* Main route */}
+                    <Polyline
+                      positions={coords}
+                      pathOptions={{
+                        color: '#2563eb',
+                        weight: 5,
+                        opacity: 0.9,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                      }}
+                    />
+                  </React.Fragment>
+                  )
+                })
+              }
+            </React.Fragment>
+          )
+        })}
+
+        {vehicles?.map((v, i) => {
+          const center = centers.find((c) => String(c.id) === String(v.delivery_center_id))
+          if (!center) return null
+
+          const depot = stopLatLng(center)
+          if (depot[0] === 0 && depot[1] === 0) return null
+
+          const fallbackPosition = [depot[0] - 0.003, depot[1] + i * 0.004]
+          const vid = String(v.id ?? v._id)
+          const path = routePlaybackCoords?.[vid]
+          const step = routePlaybackStep?.[vid]
+          const playbackActive =
+            simulationPhase === 'running' ||
+            simulationPhase === 'paused' ||
+            simulationPhase === 'completed'
+
+          let position = fallbackPosition
+          if (playbackActive && path && path.length && typeof step === 'number') {
+            position = path[Math.min(step, path.length - 1)]
+          }
+
+          return (
             <Marker
-              key={`c-${c.id}`}
+              key={`v-${v.id}`}
               position={position}
-              icon={centerIcon()}
+              icon={vehicleIcon(v.is_available ? 'available' : 'busy')}
+              zIndexOffset={playbackActive ? 950 : 0}
             >
               <Popup>
-                <strong>{c.name}</strong>
+                <strong className="text-sm">{v.name}</strong>
                 <br />
-                Center #{c.id}
+                <span className="font-mono text-xs font-bold">{v.vehicle_number || '—'}</span>
               </Popup>
             </Marker>
           )
@@ -300,40 +415,64 @@ export default function MapView({
             )
           })}
 
-        {/* Active Route Rendering (Guaranteed Bold Blue) */}
-        {activeRoute?.geometry?.length > 0 && (
-          <React.Fragment key="active-route-group">
-            <Polyline
-              positions={activeRoute.geometry}
-              pathOptions={{
-                color: '#60a5fa',
-                weight: 12,
-                opacity: 0.2,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-            />
-            <Polyline
-              positions={activeRoute.geometry}
-              pathOptions={{
-                color: '#2563eb',
-                weight: 7,
-                opacity: 1,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-            />
-          </React.Fragment>
-        )}
+        {/* Active Multi-Route Rendering */}
+        {(activeMultiRoutes?.length > 0 ? activeMultiRoutes : (activeRoute ? [activeRoute] : [])).map((route, idx) => {
+          const coords = extractRouteCoordinates(route)
+          if (coords.length < 2) return null
+          const colors = ROUTE_COLORS[idx % ROUTE_COLORS.length]
+          const isSelected = activeRoute?.route_id === route.route_id
+
+          return (
+            <React.Fragment key={`multi-route-${route.route_id || 'unassigned'}-${idx}`}>
+              {/* Glow layer */}
+              <Polyline
+                positions={coords}
+                pathOptions={{
+                  color: colors.glow,
+                  weight: isSelected ? 14 : 10,
+                  opacity: isSelected ? 0.3 : 0.2,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+              {/* Main route line */}
+              <Polyline
+                positions={coords}
+                eventHandlers={{
+                  click: () => setActiveRouteBase(route)
+                }}
+                pathOptions={{
+                  color: colors.primary,
+                  weight: isSelected ? 7 : 5,
+                  opacity: 0.9,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              >
+                <Tooltip sticky>
+                  <div className="text-xs font-bold">
+                    Vehicle: {route.vehicle?.name || 'Unknown'}<br/>
+                    Orders: {route.stops?.length || 0}
+                  </div>
+                </Tooltip>
+              </Polyline>
+            </React.Fragment>
+          )
+        })}
 
         {/* Background Routes (All others in the fleet) */}
         {routesList
-          .filter((r) => r.status !== 'completed' && r.geometry?.length)
-          .filter((r) => r.route_id !== activeRoute?.route_id) // Don't double render active
+          .filter((r) => r.status !== 'completed' && extractRouteCoordinates(r).length > 1)
+          .filter((r) => {
+            // Don't double render active routes
+            const isActive = activeRoute?.route_id === r.route_id
+            const isMultiActive = activeMultiRoutes.some(am => am.route_id === r.route_id)
+            return !isActive && !isMultiActive
+          })
           .map((r) => (
             <Polyline
               key={`route-polyline-${r.route_id}`}
-              positions={r.geometry}
+              positions={extractRouteCoordinates(r)}
               pathOptions={{
                 color: '#94a3b8',
                 weight: 3,
@@ -345,24 +484,6 @@ export default function MapView({
             />
           ))}
 
-        {isSimulating && activeRoute?.geometry?.[simProgress] && (
-          <Marker
-            position={activeRoute.geometry[simProgress]}
-            icon={vehicleIcon()}
-            zIndexOffset={1000}
-          >
-            <Popup>Delivery Rider (In Transit)</Popup>
-          </Marker>
-        )}
-
-        {vehiclePosition && (
-          <Marker
-            position={[Number(vehiclePosition.lat), Number(vehiclePosition.lng)]}
-            icon={vehicleIcon()}
-          >
-            <Popup>Simulated vehicle</Popup>
-          </Marker>
-        )}
       </MapContainer>
     </div>
   )

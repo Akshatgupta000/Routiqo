@@ -32,10 +32,14 @@ export function numberedStopIcon(n) {
   })
 }
 
-export function vehicleIcon() {
+export function vehicleIcon(status = 'available') {
+  const bgClass = status === 'available' ? 'bg-emerald-500' : 'bg-red-500'
   return L.divIcon({
     className: 'custom-marker-vehicle',
-    html: `<div class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-black text-lg shadow-xl dark:bg-white dark:text-black">🚐</div>`,
+    // We rotate ONLY the inner element so Leaflet's translate/position transform isn't affected.
+    html: `<div class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white ${bgClass} shadow-xl text-white">
+      <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 18px;">🚐</div>
+    </div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
   })

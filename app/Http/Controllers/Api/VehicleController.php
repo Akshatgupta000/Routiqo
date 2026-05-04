@@ -29,13 +29,23 @@ class VehicleController extends Controller
 
     public function store(StoreVehicleRequest $request): VehicleResource
     {
-        $vehicle = $this->vehicles->create($request->validated());
+        $data = $request->validated();
+        $center = \App\Models\DeliveryCenter::find($data['delivery_center_id']);
+        
+        if ($center) {
+            $stateCode = $this->vehicleService->getStateCodeFromCenter($center);
+            $data['vehicle_number'] = $this->vehicleService->generateIndianVehicleNumber($stateCode);
+        } else {
+            $data['vehicle_number'] = $this->vehicleService->generateIndianVehicleNumber();
+        }
+
+        $vehicle = $this->vehicles->create($data);
         $vehicle->load('deliveryCenter');
 
         return new VehicleResource($vehicle);
     }
 
-    public function update(UpdateVehicleRequest $request, int $id): VehicleResource
+    public function update(UpdateVehicleRequest $request, string $id): VehicleResource
     {
         $vehicle = $this->vehicles->find($id);
 
@@ -45,5 +55,17 @@ class VehicleController extends Controller
         $vehicle->load('deliveryCenter');
 
         return new VehicleResource($vehicle);
+    }
+
+    public function resetFleet(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $centerId = $request->input('delivery_center_id');
+        $query = \App\Models\Vehicle::query();
+        if ($centerId) {
+            $query->where('delivery_center_id', $centerId);
+        }
+        $query->update(['is_available' => true, 'current_load' => 0]);
+        
+        return response()->json(['message' => 'Fleet reset successful']);
     }
 }

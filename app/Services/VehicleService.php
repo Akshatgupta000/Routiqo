@@ -54,4 +54,12 @@ class VehicleService
             'delivery_center_id' => $center->id,
         ]);
     }
+    /**
+     * Update an existing vehicle's fields.
+     */
+    public function updateVehicle(Vehicle $vehicle, array $data): Vehicle
+    {
+        $vehicle->update($data);
+        return $vehicle->fresh();
+    }
 }
