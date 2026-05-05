@@ -2,7 +2,7 @@ import React, { useMemo, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip, Polygon } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { centerIcon, orderIcon, numberedStopIcon, vehicleIcon } from './mapIcons'
+import { centerIcon, orderIcon, numberedStopIcon, vehicleIcon, vehicleIconHighlighted } from './mapIcons'
 import { stopLatLng, getDistance } from '../../utils/coords'
 import { formatId } from '../../utils/format'
 import { extractRouteCoordinates } from '../../utils/routeGeometry'
@@ -342,12 +342,26 @@ export default function MapView({
             position = path[Math.min(step, path.length - 1)]
           }
 
+          // Check if this vehicle belongs to the currently selected active route
+          const isActiveVehicle = activeRoute && (
+            String(activeRoute.vehicle_id || activeRoute.vehicle?.id) === vid
+          )
+          const activeRouteIdx = isActiveVehicle
+            ? displayedRoutes.findIndex(r => String(r.vehicle_id || r.vehicle?.id) === vid)
+            : -1
+          const highlightColor = activeRouteIdx >= 0
+            ? ROUTE_COLORS[activeRouteIdx % ROUTE_COLORS.length].primary
+            : '#2563eb'
+
           return (
             <Marker
               key={`v-${v.id}`}
               position={position}
-              icon={vehicleIcon(v.is_available ? 'available' : 'busy')}
-              zIndexOffset={playbackActive ? 950 : 0}
+              icon={isActiveVehicle
+                ? vehicleIconHighlighted(highlightColor)
+                : vehicleIcon(v.is_available ? 'available' : 'busy')
+              }
+              zIndexOffset={isActiveVehicle ? 1000 : (playbackActive ? 950 : 0)}
             >
               <Popup>
                 <strong className="text-sm">{v.name}</strong>

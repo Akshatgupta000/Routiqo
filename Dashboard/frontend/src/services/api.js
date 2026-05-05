@@ -75,6 +75,11 @@ export async function deleteOrder(id) {
   return data
 }
 
+export async function clearOrdersByDate(date) {
+  const { data } = await client.delete('/orders/clear-by-date', { params: { date } })
+  return data
+}
+
 export async function assignOrder(id) {
   const { data } = await client.post(`/orders/${id}/assign`)
   return data

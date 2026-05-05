@@ -37,10 +37,24 @@ export function vehicleIcon(status = 'available') {
   return L.divIcon({
     className: 'custom-marker-vehicle',
     // We rotate ONLY the inner element so Leaflet's translate/position transform isn't affected.
-    html: `<div class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white ${bgClass} shadow-xl text-white">
-      <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 18px;">🚐</div>
+    html: `<div class="flex items-center justify-center rounded-full border-2 border-white ${bgClass} shadow-xl text-white" style="width:26px;height:26px;">
+      <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 14px;">🚐</div>
     </div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+  })
+}
+
+export function vehicleIconHighlighted(color = '#2563eb') {
+  return L.divIcon({
+    className: 'custom-marker-vehicle custom-marker-vehicle--highlighted',
+    html: `<div class="vehicle-highlight-wrapper">
+      <div class="vehicle-highlight-ring" style="border-color: ${color}; box-shadow: 0 0 16px ${color}88, 0 0 32px ${color}44;"></div>
+      <div class="vehicle-highlight-body" style="background: ${color}; box-shadow: 0 2px 12px ${color}88;">
+        <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 18px;">🚐</div>
+      </div>
+    </div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   })
 }

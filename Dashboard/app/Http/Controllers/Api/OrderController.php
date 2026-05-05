@@ -92,8 +92,8 @@ class OrderController extends Controller
         $year = (int) $request->query('year', now()->year);
         $month = (int) $request->query('month', now()->month);
 
-        $start = sprintf('%04d-%02d-01', $year, $month);
-        $end = sprintf('%04d-%02d-%02d', $year, $month, cal_days_in_month(CAL_GREGORIAN, $month, $year));
+        $start = \Carbon\Carbon::create($year, $month, 1)->startOfDay();
+        $end = $start->copy()->endOfMonth()->endOfDay();
 
         $orders = \App\Models\Order::query()
             ->whereBetween('delivery_date', [$start, $end])
@@ -108,5 +108,25 @@ class OrderController extends Controller
             ->map->count();
 
         return response()->json($orders);
+    }
+
+    /**
+     * Delete all orders for a given date.
+     * DELETE /api/orders/clear-by-date?date=2026-05-05
+     */
+    public function clearByDate(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $dateStr = $request->query('date');
+        if (!$dateStr) {
+            return response()->json(['message' => 'Date parameter is required.'], 422);
+        }
+
+        $start = \Carbon\Carbon::parse($dateStr)->startOfDay();
+        $end = \Carbon\Carbon::parse($dateStr)->endOfDay();
+
+        $count = \App\Models\Order::whereBetween('delivery_date', [$start, $end])->count();
+        \App\Models\Order::whereBetween('delivery_date', [$start, $end])->delete();
+
+        return response()->json(['deleted' => $count]);
     }
 }

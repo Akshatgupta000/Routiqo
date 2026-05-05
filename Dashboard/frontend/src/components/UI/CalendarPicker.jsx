@@ -199,7 +199,7 @@ export default function CalendarPicker({ value, onChange, orderCount, compact = 
               ].filter(Boolean).join(' ')}
             >
               <span className="cal-day-num">{cell.day}</span>
-              {hasOrders && !isSelected && (
+              {hasOrders && (
                 <span className="cal-order-dot" />
               )}
               {today && !isSelected && !hasOrders && <span className="cal-today-dot" />}

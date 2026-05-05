@@ -30,6 +30,53 @@ body {
   border: none !important;
 }
 
+/* Highlighted Vehicle Marker */
+.custom-marker-vehicle--highlighted {
+  background: transparent !important;
+  border: none !important;
+}
+
+.vehicle-highlight-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+}
+
+.vehicle-highlight-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid;
+  animation: vehicle-ring-pulse 1.5s ease-in-out infinite;
+}
+
+.vehicle-highlight-body {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid white;
+  color: white;
+  z-index: 2;
+  animation: vehicle-body-bounce 2s ease-in-out infinite;
+}
+
+@keyframes vehicle-ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.25); opacity: 0.2; }
+}
+
+@keyframes vehicle-body-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
 .order-pin-wrapper {
   position: relative;
   display: flex;
@@ -385,16 +432,22 @@ body {
 .cal-order-dot {
   position: absolute;
   bottom: 2px;
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #f97316;
-  box-shadow: 0 0 3px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 0 4px rgba(249, 115, 22, 0.5);
 }
 
 .dark .cal-order-dot {
   background: #fb923c;
-  box-shadow: 0 0 4px rgba(251, 146, 60, 0.3);
+  box-shadow: 0 0 5px rgba(251, 146, 60, 0.4);
+}
+
+/* Show dot on selected day too */
+.cal-day--selected .cal-order-dot {
+  background: #ffffff;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
 }
 
 /* Footer */

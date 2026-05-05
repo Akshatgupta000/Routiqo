@@ -240,6 +240,24 @@ export default function Orders() {
     }
   }
 
+  const [clearing, setClearing] = useState(false)
+
+  const handleClearDay = async () => {
+    const dateLabel = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    if (!window.confirm(`Delete ALL orders for ${dateLabel}? This action cannot be undone.`)) return
+    setClearing(true)
+    try {
+      const res = await api.clearOrdersByDate(selectedDate)
+      toast(`Cleared ${res.deleted} order(s) for ${dateLabel}`)
+      refreshOrders(filter ? { status: filter } : {})
+      refreshRoutes()
+    } catch (err) {
+      toast('Failed to clear orders', 'error')
+    } finally {
+      setClearing(false)
+    }
+  }
+
   return (
     <div className="flex h-full flex-col overflow-auto p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -277,6 +295,25 @@ export default function Orders() {
                 {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
               </span>
             </div>
+          </div>
+          <div className="ml-auto">
+            <button
+              onClick={handleClearDay}
+              disabled={clearing || orders.length === 0}
+              className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-100 hover:border-red-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
+            >
+              {clearing ? (
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              )}
+              {clearing ? 'Clearing…' : "Clear Day's Orders"}
+            </button>
           </div>
         </div>
       </Card>
