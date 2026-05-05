@@ -46,28 +46,24 @@ export function numberedStopIcon(n, color = '#10b981', isPriority = false) {
 }
 
 export function vehicleIcon(status = 'available') {
-  const bgClass = status === 'available' ? 'bg-emerald-500' : 'bg-red-500'
+  const color = status === 'available' ? '#10b981' : '#ff0000'
   return L.divIcon({
     className: 'custom-marker-vehicle',
-    // We rotate ONLY the inner element so Leaflet's translate/position transform isn't affected.
-    html: `<div class="flex items-center justify-center rounded-full border-2 border-white ${bgClass} shadow-xl text-white" style="width:26px;height:26px;">
-      <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 14px;">🚐</div>
-    </div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    html: `<div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 20px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); color: ${color};">🚐</div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
   })
 }
 
 export function vehicleIconHighlighted(color = '#2563eb') {
   return L.divIcon({
     className: 'custom-marker-vehicle custom-marker-vehicle--highlighted',
-    html: `<div class="vehicle-highlight-wrapper">
-      <div class="vehicle-highlight-ring" style="border-color: ${color}; box-shadow: 0 0 16px ${color}88, 0 0 32px ${color}44;"></div>
-      <div class="vehicle-highlight-body" style="background: ${color}; box-shadow: 0 2px 12px ${color}88;">
-        <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 18px;">🚐</div>
-      </div>
-    </div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
+    html: `
+      <div class="relative">
+        <div class="absolute inset-0 animate-ping rounded-full bg-blue-500/20" style="background-color: ${color}20;"></div>
+        <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 28px; filter: drop-shadow(0 2px 4px ${color}88); color: ${color}; position: relative; z-index: 10;">🚐</div>
+      </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   })
 }

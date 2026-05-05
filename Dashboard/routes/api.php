@@ -13,7 +13,11 @@ Route::delete('/centers/{id}', [DeliveryCenterController::class, 'destroy']);
 
 Route::post('/orders', [OrderController::class, 'store']);
 Route::get('/orders/date-counts', [OrderController::class, 'dateCounts']);
+Route::get('/orders/bulk-counts', [OrderController::class, 'bulkCounts']);
 Route::delete('/orders/clear-by-date', [OrderController::class, 'clearByDate']);
+Route::delete('/orders/completed', [OrderController::class, 'deleteCompleted']);
+Route::delete('/orders/pending', [OrderController::class, 'deletePending']);
+Route::delete('/orders', [OrderController::class, 'deleteAll']);
 Route::get('/orders', [OrderController::class, 'index']);
 Route::patch('/orders/{id}', [OrderController::class, 'update']);
 Route::post('/orders/{id}/assign', [OrderController::class, 'assign']);

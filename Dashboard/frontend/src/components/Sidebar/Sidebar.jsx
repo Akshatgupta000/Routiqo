@@ -5,7 +5,7 @@ import CalendarPicker from '../UI/CalendarPicker'
 import { useApp } from '../../context/AppContext'
 import { formatDuration, formatKm } from '../../utils/format'
 import AddCenterModal from '../Forms/AddCenterModal'
-import EditCenterModal from '../Forms/EditCenterModal'
+import Modal from '../UI/Modal'
 import { useState } from 'react'
 import * as api from '../../services/api'
 
@@ -34,18 +34,20 @@ export default function Sidebar() {
 
   const [showHubs, setShowHubs] = useState(false)
   const [addCenterOpen, setAddCenterOpen] = useState(false)
-  const [editCenterOpen, setEditCenterOpen] = useState(false)
+  const [deleteConfirmCenter, setDeleteConfirmCenter] = useState(null)
 
   const currentCenter = centers.find(c => c.id === selectedCenterId)
 
-  const handleDeleteCenter = async () => {
-    if (!selectedCenterId) return
-    if (!window.confirm(`Are you sure you want to delete "${currentCenter?.name}"? This will unassign all vehicles from this hub.`)) return
+  const confirmDeleteCenter = async () => {
+    if (!deleteConfirmCenter) return
 
     try {
-      await api.deleteCenter(selectedCenterId)
-      toast('Delivery center removed')
-      setSelectedCenterId(null)
+      await api.deleteCenter(deleteConfirmCenter.id)
+      toast('Delivery hub removed')
+      if (selectedCenterId === deleteConfirmCenter.id) {
+        setSelectedCenterId(null)
+      }
+      setDeleteConfirmCenter(null)
       setShowHubs(false)
       refreshCenters()
     } catch (err) {
@@ -56,7 +58,7 @@ export default function Sidebar() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-transparent">
-      <div className="flex items-center justify-between gap-2 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-800">
+      <div className={`flex items-center justify-between gap-2 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-800 transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
             Last-Mile
@@ -70,7 +72,7 @@ export default function Sidebar() {
         </Button>
       </div>
 
-      <nav className="flex flex-row flex-wrap gap-1 p-3 md:flex-col md:flex-nowrap">
+      <nav className={`flex flex-row flex-wrap gap-1 p-3 md:flex-col md:flex-nowrap transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
         <NavLink to="/" end className={linkClass}>
           <span className="text-lg">⌖</span> Dashboard
         </NavLink>
@@ -86,7 +88,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Compact iOS Calendar Picker */}
-      <div className="flex-1 overflow-y-auto px-3 pb-2 custom-scrollbar">
+      <div className={`flex-1 overflow-y-auto px-3 pb-2 custom-scrollbar transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
         <CalendarPicker
           value={selectedDate}
           onChange={setSelectedDate}
@@ -177,18 +179,11 @@ export default function Sidebar() {
                           </div>
                         </button>
                         
-                        <div className="flex flex-col gap-1 pr-1 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            title="Edit"
-                            className={`p-1.5 rounded-lg ${isSelected ? 'text-white/50 hover:text-white' : 'text-zinc-400 hover:text-zinc-600'}`}
-                            onClick={(e) => { e.stopPropagation(); setEditCenterOpen(true); }}
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                          </button>
+                        <div className="flex items-center pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             title="Delete"
-                            className="p-1.5 rounded-lg text-red-400 hover:text-red-500"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteCenter(); }}
+                            className={`p-1.5 rounded-lg ${isSelected ? 'text-white/50 hover:text-red-400' : 'text-red-400 hover:text-red-500'}`}
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmCenter(c); }}
                           >
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
@@ -204,11 +199,35 @@ export default function Sidebar() {
       </div>
 
       <AddCenterModal open={addCenterOpen} onClose={() => setAddCenterOpen(false)} />
-      <EditCenterModal 
-        open={editCenterOpen} 
-        onClose={() => setEditCenterOpen(false)} 
-        center={currentCenter}
-      />
+
+      <Modal
+        open={!!deleteConfirmCenter}
+        onClose={() => setDeleteConfirmCenter(null)}
+        title="Delete Delivery Hub?"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={() => setDeleteConfirmCenter(null)}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDeleteCenter}>Delete Hub</Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Are you sure you want to delete <span className="font-bold text-zinc-900 dark:text-white">"{deleteConfirmCenter?.name}"</span>?
+          </p>
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-500/20 dark:bg-red-500/10">
+            <div className="flex items-start gap-3 text-red-600 dark:text-red-400">
+              <svg className="mt-0.5 h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="text-sm">
+                <p className="font-bold">Important Warning</p>
+                <p className="mt-1 opacity-90">Deleting this hub will orphan all existing orders and vehicles associated with it. They will no longer appear on the delivery schedule until manually re-assigned.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

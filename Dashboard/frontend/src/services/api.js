@@ -80,6 +80,26 @@ export async function clearOrdersByDate(date) {
   return data
 }
 
+export async function getOrderBulkCounts() {
+  const { data } = await client.get('/orders/bulk-counts')
+  return data
+}
+
+export async function deleteCompletedOrders() {
+  const { data } = await client.delete('/orders/completed')
+  return data
+}
+
+export async function deletePendingOrders() {
+  const { data } = await client.delete('/orders/pending')
+  return data
+}
+
+export async function deleteAllOrders() {
+  const { data } = await client.delete('/orders')
+  return data
+}
+
 export async function assignOrder(id) {
   const { data } = await client.post(`/orders/${id}/assign`)
   return data

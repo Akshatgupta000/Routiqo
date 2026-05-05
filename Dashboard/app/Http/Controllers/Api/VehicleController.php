@@ -33,8 +33,8 @@ class VehicleController extends Controller
         $center = \App\Models\DeliveryCenter::find($data['delivery_center_id']);
         
         if ($center) {
-            $stateCode = $this->vehicleService->getStateCodeFromCenter($center);
-            $data['vehicle_number'] = $this->vehicleService->generateIndianVehicleNumber($stateCode);
+            $prefix = $this->vehicleService->getRTOPrefixFromCenter($center);
+            $data['vehicle_number'] = $this->vehicleService->generateIndianVehicleNumber($prefix);
         } else {
             $data['vehicle_number'] = $this->vehicleService->generateIndianVehicleNumber();
         }

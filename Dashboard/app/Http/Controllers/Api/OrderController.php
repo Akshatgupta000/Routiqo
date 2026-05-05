@@ -112,6 +112,19 @@ class OrderController extends Controller
     }
 
     /**
+     * Get bulk counts for cleanup.
+     * GET /api/orders/bulk-counts
+     */
+    public function bulkCounts(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'completed' => \App\Models\Order::whereIn('status', [OrderStatus::Delivered->value])->count(),
+            'pending' => \App\Models\Order::where('status', OrderStatus::Pending->value)->count(),
+            'total' => \App\Models\Order::count(),
+        ]);
+    }
+
+    /**
      * Delete all orders for a given date.
      * DELETE /api/orders/clear-by-date?date=2026-05-05
      */
@@ -129,5 +142,52 @@ class OrderController extends Controller
         \App\Models\Order::whereBetween('delivery_date', [$start, $end])->delete();
 
         return response()->json(['deleted' => $count]);
+    }
+
+    /**
+     * Delete all completed (delivered) orders.
+     * DELETE /api/orders/completed
+     */
+    public function deleteCompleted(): \Illuminate\Http\JsonResponse
+    {
+        $query = \App\Models\Order::whereIn('status', [OrderStatus::Delivered->value]);
+        $count = $query->count();
+        $query->delete();
+
+        return response()->json([
+            'success' => true,
+            'deleted_count' => $count
+        ]);
+    }
+
+    /**
+     * Delete all pending orders.
+     * DELETE /api/orders/pending
+     */
+    public function deletePending(): \Illuminate\Http\JsonResponse
+    {
+        $query = \App\Models\Order::where('status', OrderStatus::Pending->value);
+        $count = $query->count();
+        $query->delete();
+
+        return response()->json([
+            'success' => true,
+            'deleted_count' => $count
+        ]);
+    }
+
+    /**
+     * Delete all orders.
+     * DELETE /api/orders
+     */
+    public function deleteAll(): \Illuminate\Http\JsonResponse
+    {
+        $count = \App\Models\Order::count();
+        \App\Models\Order::truncate();
+
+        return response()->json([
+            'success' => true,
+            'deleted_count' => $count
+        ]);
     }
 }

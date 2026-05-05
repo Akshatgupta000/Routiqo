@@ -397,24 +397,40 @@ export default function MapView({
           const activeRouteIdx = isActiveVehicle
             ? displayedRoutes.findIndex(r => String(r.vehicle_id || r.vehicle?.id) === vid)
             : -1
-          const highlightColor = activeRouteIdx >= 0
-            ? ROUTE_COLORS[activeRouteIdx % ROUTE_COLORS.length].primary
-            : '#2563eb'
+          
+          // Force bright red during simulation for high visibility as requested
+          const highlightColor = playbackActive 
+            ? '#ff0000' 
+            : (activeRouteIdx >= 0 ? ROUTE_COLORS[activeRouteIdx % ROUTE_COLORS.length].primary : '#2563eb')
 
           return (
             <Marker
-              key={`v-${v.id}`}
+              key={`v-${vid}`}
               position={position}
               icon={isActiveVehicle
                 ? vehicleIconHighlighted(highlightColor)
                 : vehicleIcon(v.is_available ? 'available' : 'busy')
               }
               zIndexOffset={isActiveVehicle ? 1000 : (playbackActive ? 950 : 0)}
+              eventHandlers={{
+                click: (e) => {
+                  const marker = e.target;
+                  marker.openPopup();
+                  setTimeout(() => {
+                    if (marker && marker.getPopup()?.isOpen()) {
+                      marker.closePopup();
+                    }
+                  }, 3000);
+                }
+              }}
             >
-              <Popup>
-                <strong className="text-sm">{v.name}</strong>
-                <br />
-                <span className="font-mono text-xs font-bold">{v.vehicle_number || '—'}</span>
+              <Popup closeButton={false} className="vehicle-mini-popup">
+                <div className="flex flex-col items-center py-0 px-1 leading-tight">
+                  <span className="text-[9px] font-bold text-zinc-900">{v.name}</span>
+                  <span className="font-mono text-[7px] font-black uppercase text-zinc-500 tracking-tighter">
+                    {v.vehicle_number || 'No Number'}
+                  </span>
+                </div>
               </Popup>
             </Marker>
           )
@@ -599,6 +615,8 @@ export default function MapView({
                   }
                 }
 
+                const orderData = orders.find(o => String(o.id) === String(s.order_id))
+
                 return (
                   <Marker
                     key={`s-${route.route_id || 'unassigned'}-${routeIdx}-${s.order_id}`}
@@ -609,6 +627,12 @@ export default function MapView({
                       s.priority === 'priority'
                     )}
                   >
+                    <Tooltip direction="top" offset={[0, -10]} opacity={0.9} sticky>
+                      <div className="flex flex-col text-[10px] leading-tight px-1">
+                        <span className="font-black text-zinc-900">#{formatId(s.order_id)}</span>
+                        <span className="text-zinc-500 truncate max-w-[150px]">{orderData?.address || 'Loading...'}</span>
+                      </div>
+                    </Tooltip>
                     <Popup>
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
@@ -628,29 +652,38 @@ export default function MapView({
         })()}
 
         {/* Active Multi-Route Rendering */}
-        {displayedRoutes
-          .map((route, idx) => {
+        {[...displayedRoutes]
+          .sort((a, b) => {
+            const aId = a.route_id || a.id
+            const bId = b.route_id || b.id
+            if (activeRoute?.route_id === aId || activeRoute?.id === aId) return 1
+            if (activeRoute?.route_id === bId || activeRoute?.id === bId) return -1
+            return 0
+          })
+          .map((route) => {
           let coords = extractRouteCoordinates(route)
           
-          // If in-progress, only show the current leg as requested for "visual purpose"
           if (route.status === 'in_progress') {
              const leg = buildLegPath(route, centers)
              if (leg.length >= 2) coords = leg
           }
 
           if (coords.length < 2) return null
-          const colors = ROUTE_COLORS[idx % ROUTE_COLORS.length]
-          const isSelected = activeRoute?.route_id === route.route_id
+          
+          // Use original index for stable coloring
+          const originalIdx = displayedRoutes.findIndex(r => (r.route_id || r.id) === (route.route_id || route.id))
+          const colors = ROUTE_COLORS[originalIdx % ROUTE_COLORS.length]
+          const isSelected = (activeRoute?.route_id || activeRoute?.id) === (route.route_id || route.id)
 
           return (
-            <React.Fragment key={`multi-route-${route.route_id || 'unassigned'}-${idx}`}>
-              {/* Glow layer */}
+            <React.Fragment key={`multi-route-${route.route_id || route.id}`}>
+              {/* Refined glow layer */}
               <Polyline
                 positions={coords}
                 pathOptions={{
                   color: colors.glow,
                   weight: isSelected ? 14 : 10,
-                  opacity: isSelected ? 0.3 : 0.2,
+                  opacity: isSelected ? 0.35 : 0.2,
                   lineCap: 'round',
                   lineJoin: 'round',
                 }}
@@ -663,8 +696,8 @@ export default function MapView({
                 }}
                 pathOptions={{
                   color: colors.primary,
-                  weight: isSelected ? 7 : 5,
-                  opacity: 0.9,
+                  weight: isSelected ? 6 : 5,
+                  opacity: isSelected ? 1 : 0.7,
                   lineCap: 'round',
                   lineJoin: 'round',
                 }}
@@ -715,7 +748,7 @@ export default function MapView({
           >
             <Share2 className="w-3 h-3 text-blue-600" />
             <span className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300">
-              Send
+              Share
             </span>
           </button>
         )}

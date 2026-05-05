@@ -10,6 +10,9 @@ import * as api from '../services/api'
 import AddCenterModal from '../components/Forms/AddCenterModal'
 import AddVehicleModal from '../components/Forms/AddVehicleModal'
 import { formatId } from '../utils/format'
+import Modal from '../components/UI/Modal'
+
+import CleanupOrders from '../components/Orders/CleanupOrders'
 
 export default function Orders() {
   const { 
@@ -28,6 +31,7 @@ export default function Orders() {
 
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   
   // Suggestion states
   const [centerSuggestion, setCenterSuggestion] = useState(null)
@@ -245,31 +249,19 @@ export default function Orders() {
     }
   }
 
-  const handleDelete = async (id) => {
-    try {
-      await api.deleteOrder(id)
-      toast('Order deleted')
-      refreshOrders()
-    } catch (err) {
-      toast('Failed to delete order', 'error')
-    }
+  const handleDelete = (id) => {
+    setDeleteConfirmId(id)
   }
 
-  const [clearing, setClearing] = useState(false)
-
-  const handleClearDay = async () => {
-    const dateLabel = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
-    if (!window.confirm(`Delete ALL orders for ${dateLabel}? This action cannot be undone.`)) return
-    setClearing(true)
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return
     try {
-      const res = await api.clearOrdersByDate(selectedDate)
-      toast(`Cleared ${res.deleted} order(s) for ${dateLabel}`)
+      await api.deleteOrder(deleteConfirmId)
+      toast('Order deleted')
       refreshOrders()
-      refreshRoutes()
+      setDeleteConfirmId(null)
     } catch (err) {
-      toast('Failed to clear orders', 'error')
-    } finally {
-      setClearing(false)
+      toast('Failed to delete order', 'error')
     }
   }
 
@@ -288,60 +280,65 @@ export default function Orders() {
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="text-xs font-semibold uppercase text-zinc-500">Delivery Center</label>
-            <select
-              className="mt-2 w-full max-w-xs rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-              value={orderFilters.hub}
-              onChange={(e) => setOrderFilters(prev => ({ ...prev, hub: e.target.value }))}
-            >
-              <option value="">All Hubs</option>
-              {centers.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Delivery Hub</label>
+            <div className="relative mt-1.5 min-w-[200px]">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <select
+                className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-3 text-sm font-semibold text-zinc-900 transition-all hover:border-zinc-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:hover:border-zinc-600"
+                value={orderFilters.hub}
+                onChange={(e) => setOrderFilters(prev => ({ ...prev, hub: e.target.value }))}
+              >
+                <option value="">All Delivery Hubs</option>
+                {centers.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-zinc-500">Status</label>
-            <select
-              className="mt-2 w-full max-w-xs rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-              value={orderFilters.status}
-              onChange={(e) => setOrderFilters(prev => ({ ...prev, status: e.target.value }))}
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="assigned">Assigned</option>
-              <option value="delivered">Delivered</option>
-            </select>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Status</label>
+            <div className="relative mt-1.5 min-w-[160px]">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <select
+                className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-3 text-sm font-semibold text-zinc-900 transition-all hover:border-zinc-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:hover:border-zinc-600"
+                value={orderFilters.status}
+                onChange={(e) => setOrderFilters(prev => ({ ...prev, status: e.target.value }))}
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="assigned">Assigned</option>
+                <option value="delivered">Delivered</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-zinc-500">Delivery date</label>
-            <div className="mt-2 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Delivery date</label>
+            <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
               <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="font-medium">
+              <span className="font-semibold">
                 {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
               </span>
             </div>
           </div>
           <div className="ml-auto">
-            <button
-              onClick={handleClearDay}
-              disabled={clearing || orders.length === 0}
-              className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-100 hover:border-red-300 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
-            >
-              {clearing ? (
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              )}
-              {clearing ? 'Clearing…' : "Clear Day's Orders"}
-            </button>
+            <CleanupOrders 
+              onActionComplete={() => {
+                refreshOrders()
+                refreshRoutes()
+              }} 
+              toast={toast} 
+            />
           </div>
         </div>
       </Card>
@@ -373,6 +370,22 @@ export default function Orders() {
         initialCenterId={vehicleSuggestion?.center_id}
         onCreated={() => refreshOrders()}
       />
+
+      <Modal
+        open={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        title="Delete Order?"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDelete}>Delete</Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Are you sure you want to delete this order? This action cannot be undone.
+        </p>
+      </Modal>
     </div>
   )
 }
