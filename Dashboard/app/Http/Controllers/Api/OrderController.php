@@ -35,9 +35,10 @@ class OrderController extends Controller
         }
 
         $date = $request->query('date');
+        $hubId = $request->query('delivery_center_id');
 
         return OrderResource::collection(
-            $this->orders->paginateWithFilters($perPage, $status, $date)
+            $this->orders->paginateWithFilters($perPage, $status, $date, $hubId)
         );
     }
 

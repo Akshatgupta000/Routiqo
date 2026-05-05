@@ -85,6 +85,7 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
               }))
               toast('Address selected')
             }}
+            autoFocus
           />
         </div>
 

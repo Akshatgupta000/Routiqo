@@ -71,6 +71,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
           </label>
           <input
             required
+            autoFocus
             className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}

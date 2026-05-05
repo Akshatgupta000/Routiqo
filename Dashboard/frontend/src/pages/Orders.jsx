@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
 import Table from '../components/UI/Table'
@@ -12,8 +12,20 @@ import AddVehicleModal from '../components/Forms/AddVehicleModal'
 import { formatId } from '../utils/format'
 
 export default function Orders() {
-  const { centers, orders, vehicles, refreshOrders, refreshRoutes, refreshVehicles, toast, selectedDate } = useApp()
-  const [filter, setFilter] = useState('')
+  const { 
+    centers, 
+    orders, 
+    vehicles, 
+    refreshOrders, 
+    refreshRoutes, 
+    refreshVehicles, 
+    toast, 
+    selectedDate, 
+    activeMultiRoutes,
+    orderFilters,
+    setOrderFilters
+  } = useApp()
+
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState(false)
   
@@ -21,17 +33,25 @@ export default function Orders() {
   const [centerSuggestion, setCenterSuggestion] = useState(null)
   const [vehicleSuggestion, setVehicleSuggestion] = useState(null)
 
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      const matchHub = !orderFilters.hub || String(o.delivery_center_id) === String(orderFilters.hub)
+      const matchStatus = !orderFilters.status || o.status === orderFilters.status
+      return matchHub && matchStatus
+    })
+  }, [orders, orderFilters])
+
   useEffect(() => {
     const run = async () => {
       setPageLoading(true)
       try {
-        await refreshOrders(filter ? { status: filter } : {})
+        await refreshOrders()
       } finally {
         setPageLoading(false)
       }
     }
     run()
-  }, [filter, refreshOrders])
+  }, [refreshOrders])
 
   const columns = [
     { key: 'id', label: 'ID', render: (r) => `#${formatId(r.id)}` },
@@ -45,7 +65,11 @@ export default function Orders() {
     {
       key: 'status',
       label: 'Status',
-      render: (r) => <Badge status={r.status}>{r.status}</Badge>,
+      render: (r) => {
+        const liveAssignment = activeMultiRoutes.find(route => route.stops?.some(s => String(s.order_id) === String(r.id)))
+        const displayStatus = r.status === 'delivered' ? 'delivered' : (liveAssignment ? 'assigned' : r.status)
+        return <Badge status={displayStatus}>{displayStatus}</Badge>
+      },
     },
     {
       key: 'center',
@@ -56,10 +80,14 @@ export default function Orders() {
       key: 'vehicle',
       label: 'Vehicle',
       render: (r) => {
-        // Use both the order's delivery_center_id and its nested delivery_center.id
-        // to handle MongoDB ObjectId string serialization differences
-        const orderCenterId = String(r.delivery_center?.id ?? r.delivery_center_id ?? '')
+        // Check for live assignment from routing plan first
+        const liveRoute = activeMultiRoutes.find(route => route.stops?.some(s => String(s.order_id) === String(r.id)))
+        const liveVehicle = liveRoute ? vehicles.find(v => String(v.id) === String(liveRoute.vehicle_id)) : null
+        
+        const effectiveVehicle = liveVehicle || r.vehicle
+        const isLive = !!liveVehicle
 
+        const orderCenterId = String(r.delivery_center?.id ?? r.delivery_center_id ?? '')
         const centerVehicles = vehicles.filter(v => {
           const vCenterId = String(v.delivery_center?.id ?? v.delivery_center_id ?? '')
           return vCenterId === orderCenterId && v.is_available
@@ -80,50 +108,44 @@ export default function Orders() {
 
         return (
           <div className="group relative min-w-[140px]">
-            {!r.vehicle ? (
+            {!effectiveVehicle ? (
               <div className="flex flex-col py-1">
-                <span className="text-[9px] font-black uppercase tracking-tighter text-emerald-500/70">
-                  Auto-Suggest
+                <span className="text-[9px] font-black uppercase tracking-tighter text-zinc-400">
+                  Assignment
                 </span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  {firstAvailable?.name ?? 'No fleet available'}
+                <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500">
+                  Not Assigned
                 </span>
-                {firstAvailable && (
-                  <span className="font-mono text-[9px] text-zinc-400">
-                    {firstAvailable.vehicle_number}
-                  </span>
-                )}
-                {!firstAvailable && orderCenterId && (
-                  <span className="text-[9px] italic text-zinc-400">
-                    No available vehicle in {r.delivery_center?.name ?? 'this hub'}
-                  </span>
-                )}
               </div>
             ) : (
               <div className="flex flex-col py-1">
-                <span className="text-[9px] font-black uppercase tracking-tighter text-zinc-400">
-                  Assigned
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-[9px] font-black uppercase tracking-tighter ${isLive ? 'text-indigo-500' : 'text-zinc-400'}`}>
+                    {isLive ? 'In Plan' : 'Assigned'}
+                  </span>
+                  {isLive && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                  )}
+                </div>
+                <span className={`text-xs font-bold ${isLive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-900 dark:text-white'}`}>
+                  {effectiveVehicle.name}
                 </span>
-                <span className="text-xs font-bold text-zinc-900 dark:text-white">
-                  {r.vehicle.name}
-                </span>
-                {r.vehicle.vehicle_number && (
+                {effectiveVehicle.vehicle_number && (
                   <span className="font-mono text-[9px] text-zinc-400">
-                    {r.vehicle.vehicle_number}
+                    {effectiveVehicle.vehicle_number}
                   </span>
                 )}
               </div>
             )}
 
-            {/* Hover-activated Select Overlay */}
             {centerVehicles.length > 0 && (
               <select
                 className="absolute inset-0 cursor-pointer opacity-0"
-                value={r.vehicle?.id || ''}
+                value={effectiveVehicle?.id || ''}
                 onChange={(e) => handleChange(e.target.value)}
               >
                 <option value="" disabled>
-                  {r.vehicle ? 'Change vehicle...' : 'Assign to...'}
+                  {effectiveVehicle ? 'Change vehicle...' : 'Assign to...'}
                 </option>
                 {centerVehicles.map((v) => (
                   <option key={v.id} value={v.id}>
@@ -131,13 +153,6 @@ export default function Orders() {
                   </option>
                 ))}
               </select>
-            )}
-
-            {/* Tooltip hint on hover */}
-            {centerVehicles.length > 0 && (
-              <div className="pointer-events-none absolute -top-6 left-0 scale-0 rounded bg-zinc-900 px-2 py-1 text-[9px] text-white transition-all group-hover:scale-100 dark:bg-white dark:text-zinc-900">
-                Click to change assignment
-              </div>
             )}
           </div>
         )
@@ -188,7 +203,7 @@ export default function Orders() {
     try {
       await api.assignOrder(id)
       toast('Order assigned successfully')
-      refreshOrders(filter ? { status: filter } : {})
+      refreshOrders()
       refreshVehicles()
     } catch (err) {
       const errorData = err?.response?.data?.errors || {}
@@ -222,7 +237,7 @@ export default function Orders() {
     try {
       await api.updateOrder(id, { status: 'delivered' })
       toast('Order marked as delivered')
-      refreshOrders(filter ? { status: filter } : {})
+      refreshOrders()
       refreshRoutes()
       refreshVehicles()
     } catch (err) {
@@ -234,7 +249,7 @@ export default function Orders() {
     try {
       await api.deleteOrder(id)
       toast('Order deleted')
-      refreshOrders(filter ? { status: filter } : {})
+      refreshOrders()
     } catch (err) {
       toast('Failed to delete order', 'error')
     }
@@ -249,7 +264,7 @@ export default function Orders() {
     try {
       const res = await api.clearOrdersByDate(selectedDate)
       toast(`Cleared ${res.deleted} order(s) for ${dateLabel}`)
-      refreshOrders(filter ? { status: filter } : {})
+      refreshOrders()
       refreshRoutes()
     } catch (err) {
       toast('Failed to clear orders', 'error')
@@ -273,13 +288,26 @@ export default function Orders() {
       <Card className="mb-4">
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="text-xs font-semibold uppercase text-zinc-500">Filter status</label>
+            <label className="text-xs font-semibold uppercase text-zinc-500">Delivery Center</label>
             <select
               className="mt-2 w-full max-w-xs rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={orderFilters.hub}
+              onChange={(e) => setOrderFilters(prev => ({ ...prev, hub: e.target.value }))}
             >
-              <option value="">All</option>
+              <option value="">All Hubs</option>
+              {centers.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase text-zinc-500">Status</label>
+            <select
+              className="mt-2 w-full max-w-xs rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              value={orderFilters.status}
+              onChange={(e) => setOrderFilters(prev => ({ ...prev, status: e.target.value }))}
+            >
+              <option value="">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="assigned">Assigned</option>
               <option value="delivered">Delivered</option>
@@ -321,14 +349,14 @@ export default function Orders() {
       {pageLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : (
-        <Table columns={columns} rows={orders} empty="No orders loaded." />
+        <Table columns={columns} rows={filteredOrders} empty="No orders match the selected filters." />
       )}
 
       <AddOrderModal
         open={modal}
         onClose={() => setModal(false)}
         toast={toast}
-        onCreated={() => refreshOrders(filter ? { status: filter } : {})}
+        onCreated={() => refreshOrders()}
       />
 
       <AddCenterModal
@@ -343,7 +371,7 @@ export default function Orders() {
         centers={centers}
         toast={toast}
         initialCenterId={vehicleSuggestion?.center_id}
-        onCreated={() => refreshOrders(filter ? { status: filter } : {})}
+        onCreated={() => refreshOrders()}
       />
     </div>
   )

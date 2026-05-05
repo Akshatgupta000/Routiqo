@@ -47,7 +47,7 @@ function FitBounds({ bounds }) {
   const map = useMap()
   useEffect(() => {
     if (bounds && bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 14 })
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 12 })
     }
   }, [map, bounds])
   return null
@@ -77,7 +77,7 @@ function FlyToFocus({ focus }) {
   const map = useMap()
   useEffect(() => {
     if (focus?.lat && focus?.lng) {
-      map.flyTo([focus.lat, focus.lng], focus.zoom || 14, {
+      map.flyTo([focus.lat, focus.lng], focus.zoom || 12, {
         duration: 1.5,
         easeLinearity: 0.25,
       })
@@ -150,7 +150,7 @@ export default function MapView({
       setMapFocus({
         lat: Number(nearest.latitude),
         lng: Number(nearest.longitude),
-        zoom: 13
+        zoom: 12
       })
 
       try {
@@ -295,7 +295,7 @@ export default function MapView({
                     setMapFocus({
                       lat: Number(c.latitude),
                       lng: Number(c.longitude),
-                      zoom: 13
+                      zoom: 12
                     })
                     // Clear search/selection
                     setActiveOrderId(null)
@@ -540,7 +540,13 @@ export default function MapView({
 
               const routeColor = ROUTE_COLORS[routeIdx % ROUTE_COLORS.length].primary;
 
-              return route.stops?.map((s) => {
+              return route.stops
+                ?.filter(s => {
+                  // Hide delivered stops from the map as requested
+                  const status = getStopStatus(route, s);
+                  return status !== 'delivered';
+                })
+                .map((s) => {
                 globalStopCount++;
                 const [lat, lng] = stopLatLng(s)
                 

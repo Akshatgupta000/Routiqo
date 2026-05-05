@@ -95,6 +95,7 @@ export default function AddCenterModal({ open, onClose, initialData }) {
           </label>
           <input
             required
+            autoFocus
             placeholder="e.g. Downtown Hub"
             className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
             value={form.name}
@@ -122,31 +123,6 @@ export default function AddCenterModal({ open, onClose, initialData }) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-              Latitude
-            </label>
-            <input
-              readOnly
-              className="w-full rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 outline-none dark:border-zinc-800 dark:bg-zinc-900/50"
-              value={form.latitude}
-              placeholder="Auto-filled"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-              Longitude
-            </label>
-            <input
-              readOnly
-              className="w-full rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 outline-none dark:border-zinc-800 dark:bg-zinc-900/50"
-              value={form.longitude}
-              placeholder="Auto-filled"
-            />
-          </div>
-        </div>
-        
         <p className="text-[10px] italic text-zinc-500">
           The map will automatically pan and zoom to this location once saved.
         </p>

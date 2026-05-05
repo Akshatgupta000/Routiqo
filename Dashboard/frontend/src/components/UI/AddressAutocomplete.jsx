@@ -6,7 +6,8 @@ export default function AddressAutocomplete({
   onChange, 
   onSelect, 
   placeholder = "Search for an address...",
-  className = "" 
+  className = "",
+  autoFocus = false
 }) {
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(false)
@@ -80,6 +81,7 @@ export default function AddressAutocomplete({
           value={value}
           onChange={handleInputChange}
           onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+          autoFocus={autoFocus}
         />
         {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">

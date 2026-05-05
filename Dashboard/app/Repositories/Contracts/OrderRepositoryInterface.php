@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 
 interface OrderRepositoryInterface
 {
-    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null, ?string $date = null): LengthAwarePaginator;
+    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null, ?string $date = null, ?string $deliveryCenterId = null): LengthAwarePaginator;
 
     public function all(): Collection;
 

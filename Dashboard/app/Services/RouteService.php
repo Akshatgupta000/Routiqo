@@ -159,7 +159,7 @@ class RouteService
             foreach ($planned as $route) {
                 // Unassign from vehicle but keep status (e.g. Assigned or Delivered)
                 foreach ($route->routeStops as $stop) {
-                    if ($stop->order) {
+                    if ($stop->order && $stop->order->status !== OrderStatus::Delivered) {
                         $this->orders->update($stop->order, [
                             'vehicle_id' => null,
                             'status' => OrderStatus::Pending,
@@ -361,7 +361,10 @@ class RouteService
                 'estimated_arrival_time' => $timing['etas'][$index] ?? null,
             ]);
 
-            $this->orders->markStatus($order, OrderStatus::Assigned);
+            $this->orders->update($order, [
+                'status' => OrderStatus::Assigned,
+                'vehicle_id' => $vehicle->id,
+            ]);
         }
 
         return $route->fresh(['deliveryCenter', 'vehicle', 'routeStops.order']);
@@ -395,15 +398,6 @@ class RouteService
         float $depotLat,
         float $depotLon
     ): array {
-        if ($vehicles->count() === 1) {
-            /** @var Vehicle $singleVehicle */
-            $singleVehicle = $vehicles->first();
-
-            return [
-                $singleVehicle->id => $orders->values(),
-            ];
-        }
-
         $sorted = $orders->sort(function (Order $a, Order $b) use ($depotLat, $depotLon) {
             if ($a->priority->rank() !== $b->priority->rank()) {
                 return $b->priority->rank() <=> $a->priority->rank();
@@ -422,7 +416,6 @@ class RouteService
         $buckets = [];
         $cursor = 0;
         $totalOrders = $sorted->count();
-        $totalVehicles = $vehicles->count();
 
         foreach ($vehicles->sortBy('id')->values() as $index => $vehicle) {
             $remainingOrders = $totalOrders - $cursor;
@@ -431,18 +424,13 @@ class RouteService
                 continue;
             }
 
-            $remainingVehicles = $totalVehicles - $index;
-            $isLastVehicle = ($remainingVehicles === 1);
-
-            if ($isLastVehicle) {
-                // If this is the last available vehicle, it MUST take all remaining orders
-                // even if it exceeds its nominal capacity.
-                $take = $remainingOrders;
-            } else {
-                // For non-last vehicles, we try to balance the load while respecting capacity
-                $currentAvailableTarget = (int) ceil($remainingOrders / $remainingVehicles);
-                $take = min($vehicle->capacity, $currentAvailableTarget);
-            }
+            $remainingVehicles = $vehicles->count() - $index;
+            
+            // Calculate a fair share of orders for this vehicle
+            $fairShare = (int) ceil($remainingOrders / $remainingVehicles);
+            
+            // Respect both the fair share and the strict capacity limit
+            $take = min($fairShare, $vehicle->capacity, $remainingOrders);
             
             $slice = $sorted->slice($cursor, $take)->values();
             
@@ -450,11 +438,7 @@ class RouteService
             $buckets[$vehicle->id] = $slice;
         }
 
-        if ($cursor < $sorted->count()) {
-            throw ValidationException::withMessages([
-                'delivery_center_id' => __('Unable to assign every order without exceeding vehicle capacities.'),
-            ]);
-        }
+        return $buckets;
 
         return $buckets;
     }

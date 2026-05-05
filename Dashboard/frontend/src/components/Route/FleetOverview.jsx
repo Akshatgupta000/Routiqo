@@ -12,7 +12,7 @@ const ROUTE_COLORS = [
   '#06b6d4', // Cyan
 ]
 
-export default function FleetOverview() {
+export default function FleetOverview({ onToggleSequence, showSequence }) {
   const { 
     activeMultiRoutes, 
     activeRoute, 
@@ -26,14 +26,12 @@ export default function FleetOverview() {
     selectedCenterId && String(v.delivery_center_id) === String(selectedCenterId)
   )
 
-  const [showSequence, setShowSequence] = useState(true)
   const [showFleet, setShowFleet] = useState(true)
 
   // Auto-manage sidebar sections when routes are generated
   useEffect(() => {
     if (activeMultiRoutes && activeMultiRoutes.length > 0) {
       setShowFleet(true) // Ensure dispatch is visible
-      setShowSequence(false) // Hide detailed sequence by default
     }
   }, [activeMultiRoutes])
 
@@ -111,8 +109,8 @@ export default function FleetOverview() {
       {activeRoute && (
         <div className="mt-6 border-t border-zinc-100 dark:border-zinc-800 pt-4">
           <button 
-            onClick={() => setShowSequence(!showSequence)}
-            className="w-full flex items-center justify-between mb-4 group cursor-pointer"
+            onClick={onToggleSequence}
+            className="w-full flex items-center justify-between group cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
@@ -131,50 +129,6 @@ export default function FleetOverview() {
               </div>
             </div>
           </button>
-
-          {showSequence && (
-            <div className="relative space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              {/* Vertical Line */}
-              <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-zinc-100 dark:bg-zinc-800" />
-
-              {activeRoute.stops?.map((stop, sIdx) => (
-                <div key={`stop-${stop.order_id}-${sIdx}`} className="relative flex items-start gap-3 pl-7 group">
-                  {/* Sequence Indicator */}
-                  <div className={`absolute left-0 w-5 h-5 rounded-full border flex items-center justify-center text-[9px] font-black z-10 transition-colors ${
-                    stop.priority === 'priority' 
-                      ? 'bg-amber-500 border-amber-200 text-white shadow-[0_0_8px_rgba(245,158,11,0.4)]' 
-                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-500'
-                  }`}>
-                    {stop.sequence}
-                  </div>
-
-                  <div className="flex-1 bg-zinc-50/40 dark:bg-zinc-800/20 p-1.5 rounded-lg border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">
-                        Order #{formatId(stop.order_id).toUpperCase()}
-                      </span>
-                      {stop.priority === 'priority' && (
-                        <span className="text-[7px] font-black uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-1 py-0.5 rounded shadow-sm">
-                          Urgent
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-zinc-400">
-                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-[9px] font-medium">{stop.eta ? new Date(stop.eta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
-                      </div>
-                      <span className="text-[8px] text-zinc-400 font-mono">
-                        {stop.distance_from_previous > 0 ? `+${stop.distance_from_previous.toFixed(1)} km` : 'Start'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </Card>

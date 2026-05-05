@@ -119,6 +119,7 @@ export function AppProvider({ children }) {
   const playbackIntervalRef = useRef(null)
   const [serviceZones, setServiceZones] = useState([])
   const [showZones, setShowZones] = useState(true)
+  const [orderFilters, setOrderFilters] = useState({ hub: '', status: '' })
 
   const refreshZones = useCallback(async () => {
     try {
@@ -235,7 +236,7 @@ export function AppProvider({ children }) {
       setMapFocus({
         lat: Number(newCenter.latitude),
         lng: Number(newCenter.longitude),
-        zoom: 14
+        zoom: 12
       })
       
       toast(`Delivery center "${newCenter.name}" added and centered.`)
@@ -250,7 +251,9 @@ export function AppProvider({ children }) {
   }, [refreshCenters, toast])
 
   const refreshOrders = useCallback(async (filters = {}) => {
-    const data = await api.getOrders({ per_page: 100, date: selectedDate, ...filters })
+    // We remove hub/status filters here so they don't clobber global state
+    // But we keep them in the argument for backwards compatibility if needed
+    const data = await api.getOrders({ per_page: 200, date: selectedDate, ...filters })
     const list = data?.data ?? data ?? []
     setOrders(Array.isArray(list) ? list : [])
     return list
@@ -357,7 +360,7 @@ export function AppProvider({ children }) {
         
         // Only trigger focus change if coordinates are different from current focus
         if (!mapFocus || mapFocus.lat !== lat || mapFocus.lng !== lng) {
-          setMapFocus({ lat, lng, zoom: 12 })
+          setMapFocus({ lat, lng, zoom: 11 })
         }
       }
     }
@@ -616,6 +619,43 @@ export function AppProvider({ children }) {
     resetFleetSimulation({ silent: true })
   }, [selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync active routes stops with latest order statuses
+  useEffect(() => {
+    if (orders.length === 0 || activeMultiRoutes.length === 0) return
+
+    setActiveMultiRoutes(prev => {
+      let globalChanged = false
+      const next = prev.map(route => {
+        const remainingStops = route.stops.filter(stop => {
+          const latestOrder = orders.find(o => String(o.id) === String(stop.order_id))
+          return !latestOrder || latestOrder.status !== 'delivered'
+        })
+        
+        if (remainingStops.length !== route.stops.length) {
+          globalChanged = true
+          // Re-sequence the remaining stops if necessary, though sequence is usually fixed
+          return { ...route, stops: remainingStops }
+        }
+        return route
+      })
+      
+      return globalChanged ? next : prev
+    })
+
+    // Also sync the single activeRouteBase
+    setActiveRouteBase(prev => {
+      if (!prev) return prev
+      const remainingStops = prev.stops.filter(stop => {
+        const latestOrder = orders.find(o => String(o.id) === String(stop.order_id))
+        return !latestOrder || latestOrder.status !== 'delivered'
+      })
+      if (remainingStops.length !== prev.stops.length) {
+        return { ...prev, stops: remainingStops }
+      }
+      return prev
+    })
+  }, [orders])
+
   const value = useMemo(
     () => ({
       theme,
@@ -675,6 +715,8 @@ export function AppProvider({ children }) {
       refreshZones,
       generateVoronoiZonesAction,
       toggleVehicleAvailability,
+      orderFilters,
+      setOrderFilters,
     }),
     [
       theme,
@@ -727,6 +769,7 @@ export function AppProvider({ children }) {
       refreshZones,
       generateVoronoiZonesAction,
       toggleVehicleAvailability,
+      orderFilters,
     ]
   )
 

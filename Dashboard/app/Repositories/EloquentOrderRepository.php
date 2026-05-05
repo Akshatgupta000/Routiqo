@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 
 class EloquentOrderRepository implements OrderRepositoryInterface
 {
-    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null, ?string $date = null): LengthAwarePaginator
+    public function paginateWithFilters(int $perPage, ?OrderStatus $status = null, ?string $date = null, ?string $deliveryCenterId = null): LengthAwarePaginator
     {
         $query = Order::query()->with(['deliveryCenter', 'vehicle'])->orderByDesc('_id');
 
@@ -20,6 +20,10 @@ class EloquentOrderRepository implements OrderRepositoryInterface
 
         if ($date) {
             $query->whereDate('delivery_date', $date);
+        }
+
+        if ($deliveryCenterId) {
+            $query->where('delivery_center_id', $deliveryCenterId);
         }
 
         return $query->paginate($perPage);
