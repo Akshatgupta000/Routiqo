@@ -25,7 +25,8 @@ class RouteGenerationTest extends TestCase
         Vehicle::factory()->create(['delivery_center_id' => $center->id, 'capacity' => 10]);
 
         $response = $this->postJson('/api/routes/generate', [
-            'delivery_center_id' => $center->id
+            'delivery_center_id' => (string) $center->id,
+            'date' => now()->format('Y-m-d'),
         ]);
 
         $response->assertStatus(422)
@@ -38,7 +39,8 @@ class RouteGenerationTest extends TestCase
         Order::factory()->count(5)->create(['delivery_center_id' => $center->id, 'status' => OrderStatus::Pending]);
 
         $response = $this->postJson('/api/routes/generate', [
-            'delivery_center_id' => $center->id
+            'delivery_center_id' => (string) $center->id,
+            'date' => now()->format('Y-m-d'),
         ]);
 
         $response->assertStatus(422)
@@ -63,7 +65,8 @@ class RouteGenerationTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/routes/generate', [
-            'delivery_center_id' => $center->id
+            'delivery_center_id' => (string) $center->id,
+            'date' => now()->format('Y-m-d'),
         ]);
 
         $response->assertStatus(201);
@@ -114,7 +117,8 @@ class RouteGenerationTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/routes/generate', [
-            'delivery_center_id' => $center->id
+            'delivery_center_id' => (string) $center->id,
+            'date' => now()->format('Y-m-d'),
         ]);
 
         $response->assertStatus(201);
@@ -152,7 +156,7 @@ class RouteGenerationTest extends TestCase
         $lowPriority = Order::factory()->create([
             'delivery_center_id' => $center->id,
             'status' => OrderStatus::Pending,
-            'priority' => OrderPriority::Low,
+            'priority' => OrderPriority::Normal,
             'latitude' => 10.0,
             'longitude' => 10.0,
         ]);
@@ -160,13 +164,14 @@ class RouteGenerationTest extends TestCase
         $highPriority = Order::factory()->create([
             'delivery_center_id' => $center->id,
             'status' => OrderStatus::Pending,
-            'priority' => OrderPriority::High,
+            'priority' => OrderPriority::Priority,
             'latitude' => 10.0, // Same location to avoid distance biasing the nearest neighbor
             'longitude' => 10.0,
         ]);
 
         $response = $this->postJson('/api/routes/generate', [
-            'delivery_center_id' => $center->id
+            'delivery_center_id' => (string) $center->id,
+            'date' => now()->format('Y-m-d'),
         ]);
 
         $response->assertStatus(201);

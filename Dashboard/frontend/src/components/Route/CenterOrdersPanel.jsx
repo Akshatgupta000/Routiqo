@@ -1,12 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Card from '../UI/Card'
 import { formatId } from '../../utils/format'
 import { useApp } from '../../context/AppContext'
 import * as api from '../../services/api'
 
 export default function CenterOrdersPanel({ centerId }) {
-  const { orders, vehicles, generateRoutesAction, isSimulating, startFleetSimulation, toast } = useApp()
+  const { orders, vehicles, activeMultiRoutes, generateRoutesAction, isSimulating, startFleetSimulation, toast } = useApp()
   const [activeTab, setActiveTab] = useState('orders')
+  const [showContent, setShowContent] = useState(true)
+
+  // Auto-expand when routes are generated
+  useEffect(() => {
+    if (activeMultiRoutes && activeMultiRoutes.length > 0) {
+      setShowContent(true)
+    }
+  }, [activeMultiRoutes])
 
   const centerOrders = useMemo(() => {
     if (!centerId) return []
@@ -21,36 +29,48 @@ export default function CenterOrdersPanel({ centerId }) {
   if (!centerId) return null
 
   return (
-    <Card className="max-h-[280px] overflow-hidden !p-0 flex flex-col border border-zinc-200 dark:border-zinc-800 shadow-sm">
+    <Card className="!p-0 flex flex-col border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all duration-300">
       <div className="flex flex-col border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-0 z-20">
-        <div className="px-4 py-2.5">
+        <button 
+          onClick={() => setShowContent(!showContent)}
+          className="w-full flex items-center justify-between px-4 py-2.5 group cursor-pointer"
+        >
           <h3 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-tight">Hub Inventory</h3>
-        </div>
-        <div className="flex px-2 pb-2 gap-1">
-          <button 
-            onClick={() => setActiveTab('orders')}
-            className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-colors ${
-              activeTab === 'orders' 
-                ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' 
-                : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            Orders ({centerOrders.length})
-          </button>
-          <button 
-            onClick={() => setActiveTab('vehicles')}
-            className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-colors ${
-              activeTab === 'vehicles' 
-                ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' 
-                : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            Vehicles ({centerVehicles.length})
-          </button>
-        </div>
+          <div className={`p-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 transition-transform ${showContent ? 'rotate-180' : ''}`}>
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+
+        {showContent && (
+          <div className="flex px-2 pb-2 gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+            <button 
+              onClick={() => setActiveTab('orders')}
+              className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-colors ${
+                activeTab === 'orders' 
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' 
+                  : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`}
+            >
+              Orders ({centerOrders.length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('vehicles')}
+              className={`flex-1 py-1 text-[10px] font-bold rounded-md transition-colors ${
+                activeTab === 'vehicles' 
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' 
+                  : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`}
+            >
+              Vehicles ({centerVehicles.length})
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      {showContent && (
+        <div className="flex-1 overflow-y-auto custom-scrollbar animate-in fade-in duration-300 max-h-[180px]">
         {activeTab === 'orders' ? (
           centerOrders.length === 0 ? (
             <div className="p-8 text-center">
@@ -106,35 +126,11 @@ export default function CenterOrdersPanel({ centerId }) {
                     <td className="px-4 py-2 font-bold">{v.name}</td>
                     <td className="px-4 py-2 font-mono text-zinc-500">{v.vehicle_number}</td>
                     <td className="px-4 py-2 text-right">
-                      <button 
-                        onClick={async () => {
-                          try {
-                            const newStatus = !v.is_available
-                            await api.updateVehicle(v.id, { is_available: newStatus })
-                            
-                            const wasSimulating = isSimulating
-                            
-                            // Let the user know what's happening
-                            toast(`Vehicle ${v.name} is now ${newStatus ? 'Available' : 'Busy'}. Regenerating routes...`)
-                            
-                            // Regenerate routes automatically with the new fleet availability
-                            await generateRoutesAction(centerId)
-                            
-                            if (wasSimulating) {
-                               // Brief pause to let state settle before auto-resuming simulation
-                               setTimeout(() => {
-                                  startFleetSimulation()
-                               }, 500)
-                            }
-                          } catch (e) {
-                            toast('Failed to update vehicle status', 'error')
-                          }
-                        }}
-                        className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase transition-transform hover:scale-105 active:scale-95 ${
-                        v.is_available ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200'
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${
+                        v.is_available ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                       }`}>
                         {v.is_available ? 'Available' : 'Busy'}
-                      </button>
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -143,6 +139,7 @@ export default function CenterOrdersPanel({ centerId }) {
           )
         )}
       </div>
+      )}
     </Card>
   )
 }

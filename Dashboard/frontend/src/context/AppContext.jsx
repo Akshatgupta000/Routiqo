@@ -403,6 +403,11 @@ export function AppProvider({ children }) {
   }, [resetFleetSimulation])
 
   const generateRoutesAction = useCallback(async (overrideCenterId = null) => {
+    // Immediately clear state for instant visual feedback
+    resetFleetSimulation({ silent: true })
+    setActiveMultiRoutes([])
+    setActiveRouteBase(null)
+
     const centerToUse = overrideCenterId || selectedCenterId
     const payload = {
       ...(centerToUse != null ? { delivery_center_id: centerToUse } : {}),
@@ -442,12 +447,19 @@ export function AppProvider({ children }) {
       
       await Promise.all([refreshOrders(), refreshRoutes()])
       resetFleetSimulation({ silent: true })
+
+      return allPrimaryRoutes.map((r) => normalizeRouteForSimulation(stripMeta(r)))
     } catch (e) {
       const msg =
         e?.response?.data?.errors?.delivery_center_id?.[0] ||
         e?.response?.data?.message ||
         e.message ||
         'Generation failed'
+      // On error, clear active routes to prevent showing stale/invalid data
+      setActiveMultiRoutes([])
+      setActiveRouteBase(null)
+      resetFleetSimulation({ silent: true })
+      
       toast(msg, 'error')
     } finally {
       setLoading((l) => ({ ...l, generate: false }))
@@ -476,10 +488,9 @@ export function AppProvider({ children }) {
     setDraftDeliveries((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  const startFleetSimulation = useCallback(() => {
-    const routesToSimulate = (
-      activeMultiRoutes.length > 0 ? activeMultiRoutes : activeRoute ? [activeRoute] : []
-    ).filter(r => {
+  const startFleetSimulation = useCallback((routesOverride = null) => {
+    const baseRoutes = routesOverride || (activeMultiRoutes.length > 0 ? activeMultiRoutes : activeRoute ? [activeRoute] : [])
+    const routesToSimulate = baseRoutes.filter(r => {
       // Find latest availability from state
       const latestVehicle = vehicles.find(v => String(v.id) === String(r.vehicle_id || r.vehicle?.id))
       const isAvailable = latestVehicle ? latestVehicle.is_available : (r.vehicle?.is_available ?? true)
@@ -558,6 +569,39 @@ export function AppProvider({ children }) {
     }
   }, [refreshVehicles, toast])
 
+  const toggleVehicleAvailability = useCallback(async (vehicleId, currentStatus) => {
+    const wasSimulating = simulationPhase === 'running' || simulationPhase === 'paused'
+
+    // Force instant clear of map and simulation
+    setActiveMultiRoutes([])
+    setActiveRouteBase(null)
+    resetFleetSimulation({ silent: true })
+
+    setLoading((l) => ({ ...l, updateVehicle: true }))
+    try {
+      await api.updateVehicle(vehicleId, { is_available: !currentStatus })
+      await refreshVehicles()
+      
+      // If we have a center selected, we MUST regenerate routes to reflect the new fleet capacity
+      if (selectedCenterId) {
+        // We use generateRoutesAction which will handle the API call and update activeMultiRoutes
+        const newRoutes = await generateRoutesAction(selectedCenterId)
+        
+        // If we were simulating before, restart it with the new routes
+        if (wasSimulating && newRoutes) {
+          // Small delay to ensure the new routes are rendered on the map before building animation paths
+          setTimeout(() => startFleetSimulation(newRoutes), 100)
+        }
+      }
+      
+      toast(`Vehicle marked as ${!currentStatus ? 'busy' : 'available'}.`)
+    } catch (e) {
+      toast('Failed to update vehicle status', 'error')
+    } finally {
+      setLoading((l) => ({ ...l, updateVehicle: false }))
+    }
+  }, [selectedCenterId, generateRoutesAction, refreshVehicles, toast, resetFleetSimulation, simulationPhase, startFleetSimulation])
+
   const clearDraftDeliveries = useCallback(() => {
     setDraftDeliveries([])
   }, [])
@@ -630,6 +674,7 @@ export function AppProvider({ children }) {
       setShowZones,
       refreshZones,
       generateVoronoiZonesAction,
+      toggleVehicleAvailability,
     }),
     [
       theme,
@@ -681,6 +726,7 @@ export function AppProvider({ children }) {
       showZones,
       refreshZones,
       generateVoronoiZonesAction,
+      toggleVehicleAvailability,
     ]
   )
 

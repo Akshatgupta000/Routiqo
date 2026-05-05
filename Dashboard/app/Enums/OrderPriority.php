@@ -4,16 +4,14 @@ namespace App\Enums;
 
 enum OrderPriority: string
 {
-    case Low = 'low';
-    case Medium = 'medium';
-    case High = 'high';
+    case Priority = 'priority';
+    case Normal = 'normal';
 
     public function rank(): int
     {
         return match ($this) {
-            self::High => 3,
-            self::Medium => 2,
-            self::Low => 1,
+            self::Priority => 2,
+            self::Normal => 1,
         };
     }
 }

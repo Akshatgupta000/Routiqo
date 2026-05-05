@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #A3FF3F;
+  --color-dark: #0F0F0F;
+  --color-bg-soft: #F5F5F5;
+  --color-card: #FFFFFF;
+  --color-text-secondary: #6B7280;
+
+  --font-sans: "Outfit", "Inter", system-ui, sans-serif;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 2.5rem;
+
+  --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+  --shadow-neon: 0 0 20px rgba(163, 255, 63, 0.2);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-bg-soft);
+    font-family: var(--font-sans);
+    color: var(--color-dark);
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .container-card {
+    @apply max-w-7xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-dark font-bold px-8 py-4 rounded-full shadow-[var(--shadow-neon)] hover:shadow-[0_0_30px_rgba(163,255,63,0.5)] transition-all duration-300 active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply bg-dark text-white font-bold px-8 py-4 rounded-full hover:bg-gray-800 shadow-premium transition-all duration-300 active:scale-95;
+  }
+  
+  .nav-link {
+    @apply text-dark/70 hover:text-dark font-medium transition-colors;
+  }
+}

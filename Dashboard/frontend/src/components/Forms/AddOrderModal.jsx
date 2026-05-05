@@ -17,7 +17,7 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
   const [form, setForm] = useState({
     address: '',
     delivery_date: today,
-    priority: 'medium',
+    priority: 'normal',
   })
   const [saving, setSaving] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -40,7 +40,7 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
       toast('Order created (address geocoded automatically)')
       onCreated?.()
       onClose?.()
-      setForm({ address: '', delivery_date: today, priority: 'medium' })
+      setForm({ address: '', delivery_date: today, priority: 'normal' })
       setShowCalendar(false)
     } catch (err) {
       toast(

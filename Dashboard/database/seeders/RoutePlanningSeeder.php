@@ -59,7 +59,7 @@ class RoutePlanningSeeder extends Seeder
                 'longitude' => $coords[1] + (mt_rand(-20, 20) / 100000),
                 'delivery_center_id' => $brooklyn->id,
                 'status' => OrderStatus::Pending,
-                'priority' => $priorities[$i % 3],
+                'priority' => $priorities[$i % count($priorities)],
             ]);
         }
 
@@ -75,7 +75,7 @@ class RoutePlanningSeeder extends Seeder
                 'longitude' => $coords[1] + (mt_rand(-20, 20) / 100000),
                 'delivery_center_id' => $queens->id,
                 'status' => OrderStatus::Pending,
-                'priority' => $priorities[($i + 1) % 3],
+                'priority' => $priorities[($i + 1) % count($priorities)],
             ]);
         }
     }

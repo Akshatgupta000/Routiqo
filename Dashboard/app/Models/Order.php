@@ -22,6 +22,10 @@ class Order extends Model
         'status',
         'priority',
     ];
+    
+    protected $attributes = [
+        'priority' => 'normal',
+    ];
 
     protected function casts(): array
     {

@@ -11,6 +11,10 @@ const styles = {
     'bg-violet-100 text-violet-900 dark:bg-violet-500/20 dark:text-violet-200',
   completed:
     'bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200',
+  priority:
+    'bg-red-500 text-white',
+  normal:
+    'bg-gray-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-200',
   default:
     'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
 }

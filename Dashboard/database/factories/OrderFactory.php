@@ -34,9 +34,8 @@ class OrderFactory extends Factory
             'delivery_center_id' => DeliveryCenter::factory(),
             'status' => OrderStatus::Pending,
             'priority' => $this->faker->randomElement([
-                OrderPriority::Low,
-                OrderPriority::Medium,
-                OrderPriority::High,
+                OrderPriority::Normal,
+                OrderPriority::Priority,
             ]),
         ];
     }

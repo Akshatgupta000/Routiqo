@@ -17,11 +17,11 @@ class RouteOptimizationTest extends TestCase
         $optimizer = new RouteOptimizer(0.0, 0.0); // Depot at origin
 
         // Order 1 is at (0, 1), distance = 1
-        $order1 = Order::factory()->make(['id' => 1, 'latitude' => 1.0, 'longitude' => 0.0, 'priority' => OrderPriority::Low]);
+        $order1 = Order::factory()->make(['id' => 1, 'latitude' => 1.0, 'longitude' => 0.0, 'priority' => OrderPriority::Normal]);
         // Order 2 is at (0, 3), distance = 3
-        $order2 = Order::factory()->make(['id' => 2, 'latitude' => 3.0, 'longitude' => 0.0, 'priority' => OrderPriority::Low]);
+        $order2 = Order::factory()->make(['id' => 2, 'latitude' => 3.0, 'longitude' => 0.0, 'priority' => OrderPriority::Normal]);
         // Order 3 is at (0, 10), distance = 10
-        $order3 = Order::factory()->make(['id' => 3, 'latitude' => 10.0, 'longitude' => 0.0, 'priority' => OrderPriority::Low]);
+        $order3 = Order::factory()->make(['id' => 3, 'latitude' => 10.0, 'longitude' => 0.0, 'priority' => OrderPriority::Normal]);
 
         // Unordered collection
         $orders = collect([$order3, $order1, $order2]);
@@ -38,8 +38,8 @@ class RouteOptimizationTest extends TestCase
     public function test_total_distance_is_positive_and_logical(): void
     {
         $optimizer = new RouteOptimizer(0.0, 0.0);
-        $order1 = Order::factory()->make(['id' => 1, 'latitude' => 1.0, 'longitude' => 0.0, 'priority' => OrderPriority::Low]);
-        $order2 = Order::factory()->make(['id' => 2, 'latitude' => 3.0, 'longitude' => 0.0, 'priority' => OrderPriority::Low]);
+        $order1 = Order::factory()->make(['id' => 1, 'latitude' => 1.0, 'longitude' => 0.0, 'priority' => OrderPriority::Normal]);
+        $order2 = Order::factory()->make(['id' => 2, 'latitude' => 3.0, 'longitude' => 0.0, 'priority' => OrderPriority::Normal]);
 
         $orders = collect([$order1, $order2]);
         $tour = $optimizer->buildShortestDistanceTour($orders);
@@ -62,10 +62,10 @@ class RouteOptimizationTest extends TestCase
         
         // Intentionally create a crossing scenario where an unoptimized sequence is worse
         // A square pattern: (1,1), (-1,1), (-1,-1), (1,-1)
-        $o1 = Order::factory()->make(['id' => 1, 'latitude' => 1.0, 'longitude' => 1.0, 'priority' => OrderPriority::Low]);
-        $o2 = Order::factory()->make(['id' => 2, 'latitude' => -1.0, 'longitude' => 1.0, 'priority' => OrderPriority::Low]);
-        $o3 = Order::factory()->make(['id' => 3, 'latitude' => -1.0, 'longitude' => -1.0, 'priority' => OrderPriority::Low]);
-        $o4 = Order::factory()->make(['id' => 4, 'latitude' => 1.0, 'longitude' => -1.0, 'priority' => OrderPriority::Low]);
+        $o1 = Order::factory()->make(['id' => 1, 'latitude' => 1.0, 'longitude' => 1.0, 'priority' => OrderPriority::Normal]);
+        $o2 = Order::factory()->make(['id' => 2, 'latitude' => -1.0, 'longitude' => 1.0, 'priority' => OrderPriority::Normal]);
+        $o3 = Order::factory()->make(['id' => 3, 'latitude' => -1.0, 'longitude' => -1.0, 'priority' => OrderPriority::Normal]);
+        $o4 = Order::factory()->make(['id' => 4, 'latitude' => 1.0, 'longitude' => -1.0, 'priority' => OrderPriority::Normal]);
         
         // Bad sequence: Crosses itself
         $badTour = [$o1, $o3, $o2, $o4];

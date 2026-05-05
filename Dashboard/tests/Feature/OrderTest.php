@@ -22,7 +22,8 @@ class OrderTest extends TestCase
             'address' => '123 Test St',
             'latitude' => 34.0522,
             'longitude' => -118.2437,
-            'priority' => OrderPriority::High->value,
+            'priority' => OrderPriority::Priority->value,
+            'delivery_date' => now()->format('Y-m-d'),
         ];
 
         $response = $this->postJson('/api/orders', $payload);
@@ -54,7 +55,8 @@ class OrderTest extends TestCase
             'address' => 'Near LA',
             'latitude' => 34.0522,
             'longitude' => -118.2437,
-            'priority' => 'low',
+            'priority' => 'normal',
+            'delivery_date' => now()->format('Y-m-d'),
         ];
 
         $response = $this->postJson('/api/orders', $payload);
@@ -70,6 +72,7 @@ class OrderTest extends TestCase
             'latitude' => 'invalid', // Must be numeric
             'longitude' => -118.2437,
             'priority' => 'extreme', // Not a valid enum
+            'delivery_date' => now()->format('Y-m-d'),
         ];
 
         $response = $this->postJson('/api/orders', $payload);

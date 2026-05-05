@@ -54,7 +54,7 @@ export default function Dashboard() {
         )}
       </section>
 
-      <section className="flex w-full shrink-0 flex-col gap-4 lg:w-96 lg:max-w-md lg:overflow-y-auto">
+      <section className="flex w-full shrink-0 flex-col gap-4 lg:w-96 lg:max-w-md lg:overflow-y-auto custom-scrollbar">
         <Card className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-zinc-900 dark:text-white">

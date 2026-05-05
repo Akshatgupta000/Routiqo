@@ -29,6 +29,7 @@ class RouteOptimizationResource extends JsonResource
                     'order_id' => $stop->order_id,
                     'latitude' => $order ? (float) $order->latitude : 0.0,
                     'longitude' => $order ? (float) $order->longitude : 0.0,
+                    'priority' => $order ? ($order->priority instanceof \BackedEnum ? $order->priority->value : $order->priority) : 'normal',
                     'eta' => $stop->estimated_arrival_time !== null
                         ? $stop->estimated_arrival_time->toIso8601String()
                         : '',

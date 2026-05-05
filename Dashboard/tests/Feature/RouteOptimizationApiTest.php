@@ -20,8 +20,10 @@ class RouteOptimizationApiTest extends TestCase
 
     public function test_generate_routes_returns_comparison_pairs(): void
     {
+        $centerId = (string) \App\Models\DeliveryCenter::first()->id;
         $response = $this->postJson('/api/routes/generate', [
-            'delivery_center_id' => 1,
+            'delivery_center_id' => $centerId,
+            'date' => now()->format('Y-m-d'),
             'departure_at' => '2026-05-02T08:00:00-04:00',
         ]);
 
@@ -78,9 +80,17 @@ class RouteOptimizationApiTest extends TestCase
 
     public function test_regenerate_center_rebuilds_planned_routes(): void
     {
-        $this->postJson('/api/routes/generate', ['delivery_center_id' => 1])->assertCreated();
+        $centerId = (string) \App\Models\DeliveryCenter::first()->id;
+        $date = now()->format('Y-m-d');
 
-        $regen = $this->postJson('/api/routes/regenerate/1');
+        $this->postJson('/api/routes/generate', [
+            'delivery_center_id' => $centerId,
+            'date' => $date,
+        ])->assertCreated();
+
+        $regen = $this->postJson("/api/routes/regenerate/{$centerId}", [
+            'date' => $date,
+        ]);
         $regen->assertOk()->assertJsonStructure(['comparisons']);
     }
 
@@ -93,15 +103,29 @@ class RouteOptimizationApiTest extends TestCase
 
     public function test_generate_fails_when_no_pending_orders(): void
     {
-        $this->postJson('/api/routes/generate', ['delivery_center_id' => 1])->assertCreated();
+        $centerId = (string) \App\Models\DeliveryCenter::first()->id;
+        $date = now()->format('Y-m-d');
 
-        $this->postJson('/api/routes/generate', ['delivery_center_id' => 1])
-            ->assertStatus(422);
+        $this->postJson('/api/routes/generate', [
+            'delivery_center_id' => $centerId,
+            'date' => $date,
+        ])->assertCreated();
+
+        $this->postJson('/api/routes/generate', [
+            'delivery_center_id' => $centerId,
+            'date' => $date,
+        ])->assertStatus(422);
     }
 
     public function test_simulation_start_and_next_stop(): void
     {
-        $this->postJson('/api/routes/generate', ['delivery_center_id' => 1])->assertCreated();
+        $centerId = (string) \App\Models\DeliveryCenter::first()->id;
+        $date = now()->format('Y-m-d');
+
+        $this->postJson('/api/routes/generate', [
+            'delivery_center_id' => $centerId,
+            'date' => $date,
+        ])->assertCreated();
 
         $routeId = DeliveryRoute::query()->where('optimization_profile', 'shortest_distance')->value('id');
         $this->assertNotNull($routeId);

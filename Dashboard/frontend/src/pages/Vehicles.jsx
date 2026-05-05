@@ -8,7 +8,7 @@ import * as api from '../services/api'
 import { useApp } from '../context/AppContext'
 
 export default function Vehicles() {
-  const { vehicles, refreshVehicles, toast, centers, resetFleetAction, loading } = useApp()
+  const { vehicles, refreshVehicles, toast, centers, resetFleetAction, loading, toggleVehicleAvailability } = useApp()
   const [modal, setModal] = useState(false)
   const [editVehicle, setEditVehicle] = useState(null)
 
@@ -33,22 +33,20 @@ export default function Vehicles() {
       key: 'avail',
       label: 'Status',
       render: (r) => (
-        <div className="flex items-center gap-1.5">
-          {r.is_available ? (
-            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-              </svg>
-              Available
+        <div className="flex items-center">
+          <button 
+            onClick={() => toggleVehicleAvailability(r.id, r.is_available)}
+            className="group flex items-center gap-2.5 outline-none"
+            title={r.is_available ? "Mark as Busy" : "Mark as Available"}
+          >
+            <div className="relative">
+              <div className={`w-8 h-4 rounded-full transition-colors ${r.is_available ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'}`} />
+              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${r.is_available ? 'translate-x-4.5' : 'translate-x-0.5'}`} />
+            </div>
+            <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${r.is_available ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`}>
+              {r.is_available ? 'Available' : 'Busy'}
             </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-500 dark:text-red-400">
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Busy
-            </span>
-          )}
+          </button>
         </div>
       ),
     },

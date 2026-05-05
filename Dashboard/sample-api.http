@@ -47,7 +47,7 @@ Content-Type: {{json}}
   "address": "350 5th Ave, New York",
   "latitude": 40.7484,
   "longitude": -73.9857,
-  "priority": "high"
+  "priority": "priority"
 }
 
 ###

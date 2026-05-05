@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\OptimizationProfile;
+use App\Enums\OrderPriority;
 use App\Enums\OrderStatus;
 use App\Enums\RouteStatus;
 use App\Helpers\RouteOptimizer;
@@ -100,7 +101,15 @@ class RouteService
         }
 
         $optimizer = new \App\Helpers\RouteOptimizer((float) $center->latitude, (float) $center->longitude);
-        $tour = $optimizer->buildShortestDistanceTour($orders);
+        
+        // Split orders by priority
+        $priorityOrders = $orders->filter(fn($o) => $o->priority === OrderPriority::Priority);
+        $normalOrders = $orders->filter(fn($o) => $o->priority === OrderPriority::Normal);
+        
+        $priorityTour = $optimizer->buildShortestDistanceTour($priorityOrders);
+        $normalTour = $optimizer->buildShortestDistanceTour($normalOrders);
+        
+        $tour = array_merge($priorityTour, $normalTour);
         
         $batchId = (string) \Illuminate\Support\Str::uuid();
         $route = $this->persistOptimizedRoute(
@@ -267,13 +276,23 @@ class RouteService
 
                 $batchId = (string) Str::uuid();
 
-                $distanceTour = (new RouteOptimizer((float) $center->latitude, (float) $center->longitude))
-                    ->buildShortestDistanceTour($bucket);
+                // Split orders by priority to ensure strict 2-level sequencing
+                $priorityOrders = $bucket->filter(fn($o) => $o->priority === OrderPriority::Priority);
+                $normalOrders = $bucket->filter(fn($o) => $o->priority === OrderPriority::Normal);
+
+                $optimizer = new RouteOptimizer((float) $center->latitude, (float) $center->longitude);
+                
+                // Optimize each priority group separately
+                $priorityTour = $optimizer->buildShortestDistanceTour($priorityOrders);
+                $normalTour = $optimizer->buildShortestDistanceTour($normalOrders);
+                
+                // Merge tours: Priority orders ALWAYS come first
+                $finalTour = array_merge($priorityTour, $normalTour);
 
                 $routeDistance = $this->persistOptimizedRoute(
                     $center,
                     $vehicle,
-                    $distanceTour,
+                    $finalTour,
                     $departureAt,
                     OptimizationProfile::ShortestDistance,
                     $batchId

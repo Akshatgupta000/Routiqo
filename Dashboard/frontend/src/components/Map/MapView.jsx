@@ -292,6 +292,15 @@ export default function MapView({
                 eventHandlers={{
                   click: () => {
                     setSelectedCenterId(c.id)
+                    setMapFocus({
+                      lat: Number(c.latitude),
+                      lng: Number(c.longitude),
+                      zoom: 13
+                    })
+                    // Clear search/selection
+                    setActiveOrderId(null)
+                    // Reset and Regenerate
+                    generateRoutesAction(c.id)
                   }
                 }}
               >
@@ -310,9 +319,15 @@ export default function MapView({
 
         {vehicles?.filter(v => {
           const vid = String(v.id ?? v._id)
-          const hasPath = !!routePlaybackCoords?.[vid]
-          // Only show if vehicle is available OR it's currently part of an active simulation path
-          return v.is_available || hasPath
+          const isSimulating = !!routePlaybackCoords?.[vid]
+          
+          // Hide busy vehicles unless they are part of an active simulation playback
+          if (!v.is_available && !isSimulating) return false;
+          
+          // Only show vehicles belonging to the selected center if one is active
+          if (selectedCenterId && String(v.delivery_center_id) !== String(selectedCenterId)) return false;
+          
+          return true;
         }).map((v, i) => {
           const center = centers.find((c) => String(c.id) === String(v.delivery_center_id))
           if (!center) return null
@@ -408,13 +423,14 @@ export default function MapView({
             const minDistance = distances.length > 0 ? Math.min(...distances) : Infinity
             const isOutOfRange = minDistance > 10
 
-            const color = isOutOfRange ? '#71717a' : (o.status === 'assigned' ? '#10b981' : '#ef4444')
+            const isPriority = o.priority === 'priority'
+            const color = isOutOfRange ? '#71717a' : (isPriority ? '#ef4444' : (o.status === 'assigned' ? '#10b981' : '#6b7280'))
             
             return (
               <Marker
                 key={`o-${o.id}`}
                 position={position}
-                icon={orderIcon(color)}
+                icon={orderIcon(color, isPriority)}
                 eventHandlers={{
                   click: () => handleOrderClick(o),
                 }}
@@ -548,7 +564,11 @@ export default function MapView({
                   <Marker
                     key={`s-${route.route_id || 'unassigned'}-${routeIdx}-${s.order_id}`}
                     position={[lat, lng]}
-                    icon={numberedStopIcon(globalStopCount, getMarkerColor(stopStatus, routeColor))}
+                    icon={numberedStopIcon(
+                      s.sequence, 
+                      getMarkerColor(stopStatus, routeColor),
+                      s.priority === 'priority'
+                    )}
                   >
                     <Popup>
                       <div className="flex flex-col gap-1">
@@ -625,6 +645,9 @@ export default function MapView({
         {routesList
           .filter((r) => r.status !== 'completed' && extractRouteCoordinates(r).length > 1)
           .filter((r) => {
+            // Only show background routes for the selected center if one is active
+            if (selectedCenterId && String(r.delivery_center?.id) !== String(selectedCenterId)) return false;
+            
             // Don't double render active routes
             const isActive = activeRoute?.route_id === r.route_id
             const isMultiActive = activeMultiRoutes.some(am => am.route_id === r.route_id)

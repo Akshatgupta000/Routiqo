@@ -40,7 +40,7 @@ export default function Orders() {
     {
       key: 'priority',
       label: 'Priority',
-      render: (r) => <Badge>{r.priority}</Badge>,
+      render: (r) => <Badge status={r.priority}>{r.priority}</Badge>,
     },
     {
       key: 'status',

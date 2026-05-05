@@ -24,16 +24,6 @@ export default function ActiveRouteSummary({ route, onToggleSequence, showSequen
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={onToggleSequence}
-            className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all border ${
-              showSequence 
-                ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-900 dark:border-white' 
-                : 'bg-transparent text-zinc-500 border-zinc-200 hover:border-zinc-900 hover:text-zinc-900 dark:border-zinc-700 dark:hover:border-white dark:hover:text-white'
-            }`}
-          >
-            {showSequence ? 'Hide Stops' : 'View Sequence'}
-          </button>
           <Badge status={route.status}>
             {typeof route.status === 'string'
               ? route.status.replaceAll('_', ' ')

@@ -14,7 +14,7 @@ return new class extends Migration
             $table->decimal('latitude', 10, 7);
             $table->decimal('longitude', 10, 7);
             $table->foreignId('delivery_center_id')->nullable()->constrained('delivery_centers')->nullOnDelete();
-            $table->string('priority', 16)->default('medium');
+            $table->string('priority', 16)->default('normal');
             $table->string('status', 32)->default('pending');
             $table->timestamps();
 
