@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import Button from './Button'
 
-export default function Modal({ open, title, children, onClose, footer }) {
+export default function Modal({ open, title, children, onClose, footer, className = "max-w-lg" }) {
   useEffect(() => {
     if (!open) return
     const onKey = (e) => e.key === 'Escape' && onClose?.()
@@ -22,7 +22,7 @@ export default function Modal({ open, title, children, onClose, footer }) {
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+        className={`relative z-10 w-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 ${className}`}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">

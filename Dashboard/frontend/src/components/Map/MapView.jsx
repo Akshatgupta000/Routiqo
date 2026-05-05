@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip, Polygon } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -9,6 +9,9 @@ import { extractRouteCoordinates } from '../../utils/routeGeometry'
 import { buildLegPath } from '../../utils/simplePlaybackPath'
 import { useApp } from '../../context/AppContext'
 import * as api from '../../services/api'
+import { Share2, Map as MapIcon, MessageSquare, Copy } from 'lucide-react'
+import { buildGoogleMapsLink } from '../../utils/maps'
+import Modal from '../UI/Modal'
 
 const ROUTE_COLORS = [
   { primary: '#2563eb', glow: '#60a5fa' }, // Blue
@@ -121,6 +124,8 @@ export default function MapView({
     showZones,
   } = useApp()
 
+  const [showShareModal, setShowShareModal] = useState(false)
+
   const handleOrderClick = async (order) => {
     setActiveOrderId(order.id)
     if (!centers.length) return
@@ -165,6 +170,34 @@ export default function MapView({
         console.error('Dispatch error:', err)
         toast('Failed to link order to hub.', 'error')
       }
+    }
+  }
+
+  const handleOpenMaps = () => {
+    const link = buildGoogleMapsLink(activeRoute, centers)
+    if (link) {
+      toast('Opening Google Maps...', 'info')
+      window.open(link, '_blank')
+      setShowShareModal(false)
+    }
+  }
+
+  const handleCopyLink = () => {
+    const link = buildGoogleMapsLink(activeRoute, centers)
+    if (link) {
+      navigator.clipboard.writeText(link)
+      toast('Route link copied to clipboard!')
+      setShowShareModal(false)
+    }
+  }
+
+  const handleSendWhatsApp = () => {
+    const link = buildGoogleMapsLink(activeRoute, centers)
+    if (link) {
+      const message = encodeURIComponent(`Your delivery route: ${link}`)
+      window.open(`https://wa.me/?text=${message}`, '_blank')
+      toast('Opening WhatsApp...', 'info')
+      setShowShareModal(false)
     }
   }
 
@@ -546,7 +579,7 @@ export default function MapView({
                   const status = getStopStatus(route, s);
                   return status !== 'delivered';
                 })
-                .map((s) => {
+                .map((s, idx) => {
                 globalStopCount++;
                 const [lat, lng] = stopLatLng(s)
                 
@@ -571,7 +604,7 @@ export default function MapView({
                     key={`s-${route.route_id || 'unassigned'}-${routeIdx}-${s.order_id}`}
                     position={[lat, lng]}
                     icon={numberedStopIcon(
-                      s.sequence, 
+                      idx + 1, 
                       getMarkerColor(stopStatus, routeColor),
                       s.priority === 'priority'
                     )}
@@ -674,7 +707,85 @@ export default function MapView({
             />
           ))}
 
+        {/* Dispatch Actions (Bottom Left Trigger) */}
+        {activeRoute && (
+          <button 
+            onClick={() => setShowShareModal(true)}
+            className="absolute bottom-4 left-4 z-1000 flex items-center gap-2 p-2 px-3 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-xl animate-in fade-in slide-in-from-left-4 duration-700 hover:scale-105 transition-all group"
+          >
+            <Share2 className="w-3 h-3 text-blue-600" />
+            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300">
+              Send
+            </span>
+          </button>
+        )}
       </MapContainer>
+
+      {/* Share Dispatch Modal */}
+      {activeRoute && (
+        <Modal
+          open={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          title="Share Route"
+          className="max-w-sm"
+        >
+          <div className="space-y-3 py-1">
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0">
+                  <MapIcon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-zinc-900 dark:text-white truncate">Google Maps</p>
+                  <p className="text-[9px] text-zinc-500 truncate">Full navigation sequence</p>
+                </div>
+                <button 
+                  onClick={handleOpenMaps}
+                  className="px-2.5 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg text-[10px] font-bold hover:opacity-90 transition-opacity"
+                >
+                  Open
+                </button>
+            </div>
+
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 shrink-0">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-zinc-900 dark:text-white truncate">WhatsApp</p>
+                  <p className="text-[9px] text-zinc-500 truncate">Send to driver</p>
+                </div>
+                <button 
+                  onClick={handleSendWhatsApp}
+                  className="px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-700 transition-colors"
+                >
+                  Send
+                </button>
+            </div>
+
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 shrink-0">
+                  <Copy className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-zinc-900 dark:text-white truncate">Copy Link</p>
+                  <p className="text-[9px] text-zinc-500 truncate">To clipboard</p>
+                </div>
+                <button 
+                  onClick={handleCopyLink}
+                  className="px-2.5 py-1.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg text-[10px] font-bold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                >
+                  Copy
+                </button>
+            </div>
+
+            {activeRoute.stops?.length > 10 && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30 font-medium leading-relaxed">
+                Note: Route exceeds 10 stops. Only the first 10 stops are included in the navigation link.
+              </p>
+            )}
+          </div>
+        </Modal>
+      )}
 
       {/* Floating Simulation Controls */}
       {(activeRoute || activeMultiRoutes?.length > 0) && (

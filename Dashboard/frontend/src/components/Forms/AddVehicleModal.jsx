@@ -7,7 +7,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
   const [form, setForm] = useState({
     name: '',
     capacity: 6,
-    average_speed: 25,
+    average_speed: 30,
     is_available: true,
     delivery_center_id: initialCenterId || centers[0]?.id || '',
   })
@@ -37,7 +37,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
       setForm({
         name: '',
         capacity: 6,
-        average_speed: 25,
+        average_speed: 30,
         is_available: true,
         delivery_center_id: centers[0]?.id || '',
       })

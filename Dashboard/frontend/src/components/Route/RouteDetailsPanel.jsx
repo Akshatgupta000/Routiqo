@@ -33,10 +33,10 @@ export default function RouteDetailsPanel({ route, isDrawerContent = false }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {stops.map((s) => (
-              <tr key={s.sequence} className="text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+            {stops.map((s, idx) => (
+              <tr key={s.order_id} className="text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
                 <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">
-                  {s.sequence}
+                  {idx + 1}
                 </td>
                 <td className="px-6 py-4 font-medium">#{formatId(s.order_id)}</td>
                 <td className="px-6 py-4">{formatKm(s.distance_from_previous)}</td>
