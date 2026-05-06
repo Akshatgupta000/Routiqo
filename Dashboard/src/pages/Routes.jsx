@@ -22,8 +22,31 @@ export default function Routes() {
     ? routesList.filter((r) => r.delivery_center?.id === selectedCenterId)
     : routesList
 
+  const getRouteName = (r) => {
+    if (!r) return '';
+    if (r.route_name) return r.route_name;
+    if (r.stops?.length > 0) {
+      const sorted = [...r.stops].sort((a, b) => a.sequence - b.sequence);
+      const address = sorted[0]?.order?.address;
+      if (address) {
+        const parts = address.split(',').map(p => p.trim());
+        let street = parts.find(p => /\b(Road|Rd|Street|St|Avenue|Ave|Marg|Highway|Hwy|Lane|Ln|Boulevard|Blvd|Drive|Dr|Way|Square|Sq|Plaza|Parkway|Pkwy|Alley|Court|Ct|Circle|Cir)\b/i.test(p));
+        
+        if (!street) {
+          street = parts.length > 1 && /^[\d\-\#\s]+$/.test(parts[0]) ? parts[1] : parts[0];
+        }
+        
+        if (street) {
+          street = street.replace(/^[0-9\-\#]+\s+/, '');
+          return `Route via ${street}`;
+        }
+      }
+    }
+    return `Route #${formatId(r.route_id ?? r.id)}`;
+  };
+
   const columns = [
-    { key: 'route_id', label: 'ID', render: (r) => formatId(r.route_id ?? r.id) },
+    { key: 'route_id', label: 'Route Name', render: (r) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{getRouteName(r)}</span> },
     {
       key: 'profile',
       label: 'Profile',

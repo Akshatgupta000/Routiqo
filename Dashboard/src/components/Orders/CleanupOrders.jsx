@@ -3,6 +3,7 @@ import { ChevronDown, Trash2, CheckCircle2, Clock, AlertTriangle } from 'lucide-
 import * as api from '../../services/api'
 import Modal from '../UI/Modal'
 import Button from '../UI/Button'
+import { useApp } from '../../context/AppContext'
 
 export default function CleanupOrders({ onActionComplete, toast }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -11,10 +12,11 @@ export default function CleanupOrders({ onActionComplete, toast }) {
   const [confirmModal, setConfirmModal] = useState(null) // 'completed', 'pending', 'all'
   const [deleteInput, setDeleteInput] = useState('')
   const dropdownRef = useRef(null)
+  const { selectedDate } = useApp()
 
   const fetchCounts = async () => {
     try {
-      const data = await api.getOrderBulkCounts()
+      const data = await api.getOrderBulkCounts(selectedDate)
       setCounts(data)
     } catch (err) {
       console.error('Failed to fetch order counts', err)
@@ -32,24 +34,24 @@ export default function CleanupOrders({ onActionComplete, toast }) {
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [selectedDate])
 
   const handleAction = async (type) => {
     setLoading(true)
     try {
       let res
       if (type === 'completed') {
-        res = await api.deleteCompletedOrders()
+        res = await api.deleteCompletedOrders(selectedDate)
         toast(`${res.deleted_count} completed orders deleted`)
       } else if (type === 'pending') {
-        res = await api.deletePendingOrders()
+        res = await api.deletePendingOrders(selectedDate)
         toast(`${res.deleted_count} pending orders deleted`)
       } else if (type === 'all') {
-        res = await api.deleteAllOrders()
-        toast(`All ${res.deleted_count} orders deleted`)
+        res = await api.deleteAllOrders(selectedDate)
+        toast(`All ${res.deleted_count} orders deleted for this date`)
       } else if (type === 'delivered-all') {
-        res = await api.markAllOrdersAsDelivered()
-        toast(`Success: ${res.updated_count} orders marked as delivered`)
+        res = await api.markAllOrdersAsDelivered(selectedDate)
+        toast(`Success: ${res.updated_count} orders marked as delivered for this date`)
       }
       
       setConfirmModal(null)
@@ -141,7 +143,7 @@ export default function CleanupOrders({ onActionComplete, toast }) {
         }
       >
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          This will permanently remove all orders that have been marked as <span className="font-semibold text-zinc-900 dark:text-white">delivered</span>. This action cannot be undone.
+          This will permanently remove all orders that have been marked as <span className="font-semibold text-zinc-900 dark:text-white">delivered</span> for <span className="font-bold">{new Date(selectedDate + 'T00:00:00').toLocaleDateString()}</span>. This action cannot be undone.
         </p>
       </Modal>
 
@@ -163,7 +165,7 @@ export default function CleanupOrders({ onActionComplete, toast }) {
         }
       >
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          This will permanently remove all <span className="font-semibold text-zinc-900 dark:text-white">pending</span> orders that have not been assigned yet.
+          This will permanently remove all <span className="font-semibold text-zinc-900 dark:text-white">pending</span> orders that have not been assigned yet for <span className="font-bold">{new Date(selectedDate + 'T00:00:00').toLocaleDateString()}</span>.
         </p>
       </Modal>
 
@@ -191,7 +193,7 @@ export default function CleanupOrders({ onActionComplete, toast }) {
           <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-500/20 dark:bg-red-500/10">
             <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
             <p className="text-sm font-medium text-red-600 dark:text-red-400">
-              Warning: This will delete ALL orders across all dates and centers permanently.
+              Warning: This will delete ALL orders across all centers permanently for <span className="font-black underline">{new Date(selectedDate + 'T00:00:00').toLocaleDateString()}</span>.
             </p>
           </div>
           

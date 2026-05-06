@@ -412,7 +412,7 @@ export default function Orders() {
               onClick={async () => {
                 setBulkLoading(true)
                 try {
-                  const res = await api.markAllOrdersAsDelivered()
+                  const res = await api.markAllOrdersAsDelivered(selectedDate)
                   toast(`Success: ${res.updated_count} orders marked as delivered`)
                   refreshOrders()
                   refreshRoutes()
@@ -431,7 +431,7 @@ export default function Orders() {
         }
       >
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          This will update the status of all <span className="font-semibold text-zinc-900 dark:text-white">pending</span> and <span className="font-semibold text-zinc-900 dark:text-white">assigned</span> orders to <span className="font-semibold text-zinc-900 dark:text-white">delivered</span>.
+          This will update the status of all <span className="font-semibold text-zinc-900 dark:text-white">pending</span> and <span className="font-semibold text-zinc-900 dark:text-white">assigned</span> orders for <span className="font-bold">{new Date(selectedDate + 'T00:00:00').toLocaleDateString()}</span> to <span className="font-semibold text-zinc-900 dark:text-white">delivered</span>.
         </p>
       </Modal>
     </div>

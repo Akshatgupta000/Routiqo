@@ -52,6 +52,29 @@ export default function Dashboard() {
     [orders, selectedCenterId]
   )
 
+  const getRouteName = (r) => {
+    if (!r) return '';
+    if (r.route_name) return r.route_name;
+    if (r.stops?.length > 0) {
+      const sorted = [...r.stops].sort((a, b) => a.sequence - b.sequence);
+      const address = sorted[0]?.order?.address;
+      if (address) {
+        const parts = address.split(',').map(p => p.trim());
+        let street = parts.find(p => /\b(Road|Rd|Street|St|Avenue|Ave|Marg|Highway|Hwy|Lane|Ln|Boulevard|Blvd|Drive|Dr|Way|Square|Sq|Plaza|Parkway|Pkwy|Alley|Court|Ct|Circle|Cir)\b/i.test(p));
+        
+        if (!street) {
+          street = parts.length > 1 && /^[\d\-\#\s]+$/.test(parts[0]) ? parts[1] : parts[0];
+        }
+        
+        if (street) {
+          street = street.replace(/^[0-9\-\#]+\s+/, '');
+          return `Route via ${street}`;
+        }
+      }
+    }
+    return `Route #${r.route_id}`;
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 lg:flex-row lg:gap-6 lg:p-6">
       <section className="relative flex min-h-[45vh] flex-1 flex-col lg:min-h-0">
@@ -107,7 +130,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase text-zinc-500">Fleet</p>
+                    <p className="text-[10px] font-bold uppercase text-zinc-500">Vehicles</p>
                     <p className="text-sm font-bold text-zinc-900 dark:text-white">
                       {vehicles.filter(v => String(v.delivery_center_id) === String(selectedCenterId) && v.is_available).length}
                     </p>
@@ -144,7 +167,7 @@ export default function Dashboard() {
       <Drawer 
         open={showStopSequence} 
         onClose={() => setShowStopSequence(false)}
-        title={`Route #${activeRoute ? activeRoute.route_id : ''} Stops`}
+        title={activeRoute ? `${getRouteName(activeRoute)} Stops` : 'Route Stops'}
       >
         <RouteDetailsPanel route={activeRoute} isDrawerContent={true} />
       </Drawer>

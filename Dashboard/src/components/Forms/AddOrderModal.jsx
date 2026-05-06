@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext'
 import Modal from '../UI/Modal'
 import Button from '../UI/Button'
@@ -15,13 +15,22 @@ function formatDateDisplay(dateStr) {
 }
 
 export default function AddOrderModal({ open, onClose, toast }) {
-  const { addOrderAction } = useApp()
+  const { addOrderAction, selectedDate } = useApp()
   const today = getLocalDateString()
+  
   const [form, setForm] = useState({
     address: '',
-    delivery_date: today,
+    delivery_date: selectedDate || today,
     priority: 'normal',
   })
+
+  // Sync date when modal opens so it reflects the latest calendar selection
+  useEffect(() => {
+    if (open) {
+      setForm(f => ({ ...f, delivery_date: selectedDate || today }))
+    }
+  }, [open, selectedDate, today])
+
   const [saving, setSaving] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [lastSubmitted, setLastSubmitted] = useState(0)

@@ -12,6 +12,29 @@ export default function ActiveRouteSummary({ route, onToggleSequence, showSequen
     )
   }
 
+  const getRouteName = (route) => {
+    if (route.route_name) return route.route_name;
+    
+    if (route?.stops?.length > 0) {
+      const sorted = [...route.stops].sort((a, b) => a.sequence - b.sequence);
+      const address = sorted[0]?.order?.address;
+      if (address) {
+        const parts = address.split(',').map(p => p.trim());
+        let street = parts.find(p => /\b(Road|Rd|Street|St|Avenue|Ave|Marg|Highway|Hwy|Lane|Ln|Boulevard|Blvd|Drive|Dr|Way|Square|Sq|Plaza|Parkway|Pkwy|Alley|Court|Ct|Circle|Cir)\b/i.test(p));
+        
+        if (!street) {
+          street = parts.length > 1 && /^[\d\-\#\s]+$/.test(parts[0]) ? parts[1] : parts[0];
+        }
+        
+        if (street) {
+          street = street.replace(/^[0-9\-\#]+\s+/, '');
+          return `Route via ${street}`;
+        }
+      }
+    }
+    return `Route #${formatId(route.route_id)}`;
+  };
+
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -20,7 +43,7 @@ export default function ActiveRouteSummary({ route, onToggleSequence, showSequen
             Selected route
           </p>
           <p className="text-lg font-bold text-zinc-900 dark:text-white">
-            Route #{formatId(route.route_id)}
+            {getRouteName(route)}
           </p>
         </div>
         <div className="flex items-center gap-3">

@@ -65,6 +65,14 @@ function MapClickHandler({ onMapClick }) {
   return null
 }
 
+function MapZoomListener({ setZoom }) {
+  const map = useMapEvents({
+    zoomend: () => setZoom(map.getZoom()),
+  })
+  useEffect(() => setZoom(map.getZoom()), [map, setZoom])
+  return null
+}
+
 function MapResize({ routeId }) {
   const map = useMap()
   useEffect(() => {
@@ -125,6 +133,13 @@ export default function MapView({
   } = useApp()
 
   const [showShareModal, setShowShareModal] = useState(false)
+  const [currentZoom, setCurrentZoom] = useState(12)
+
+  // Dynamically scale vehicles so they don't look massive when zoomed out
+  // Also boost size significantly during active simulation as requested
+  const isSimulating = simulationPhase === 'running' || simulationPhase === 'paused'
+  const baseScale = Math.max(0.4, Math.min(1.5, Math.pow(1.15, currentZoom - 12)))
+  const vehicleScale = isSimulating ? baseScale * 1.6 : baseScale
 
   const handleOrderClick = async (order) => {
     setActiveOrderId(order.id)
@@ -257,6 +272,7 @@ export default function MapView({
         scrollWheelZoom
         style={{ height: '100%', minHeight: '100%' }}
       >
+        <MapZoomListener setZoom={setCurrentZoom} />
         <MapResize routeId={mapInstanceKey} />
         <FlyToFocus focus={mapFocus} />
         <TileLayer
@@ -338,12 +354,14 @@ export default function MapView({
                   }
                 }}
               >
-                <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-                  <div className="text-[10px] font-bold px-1">{c.name}</div>
-                </Tooltip>
+                {String(selectedCenterId) !== String(c.id) && (
+                  <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+                    <div className="text-[11px] font-bold text-zinc-900">{c.name}</div>
+                  </Tooltip>
+                )}
                 {simulationPhase === 'idle' && (
-                  <Popup>
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{c.name}</span>
+                  <Popup closeButton={false} className="center-mini-popup">
+                    <div className="text-[11px] font-bold text-zinc-900 !m-0 !p-0">{c.name}</div>
                   </Popup>
                 )}
               </Marker>
@@ -409,30 +427,16 @@ export default function MapView({
               key={`v-${vid}`}
               position={position}
               icon={isActiveVehicle
-                ? vehicleIconHighlighted(highlightColor)
-                : vehicleIcon(v.is_available ? 'available' : 'busy')
+                ? vehicleIconHighlighted(highlightColor, vehicleScale)
+                : vehicleIcon(v.is_available ? 'available' : 'busy', vehicleScale)
               }
               zIndexOffset={isActiveVehicle ? 1000 : (playbackActive ? 950 : 0)}
-              eventHandlers={{
-                click: (e) => {
-                  const marker = e.target;
-                  marker.openPopup();
-                  setTimeout(() => {
-                    if (marker && marker.getPopup()?.isOpen()) {
-                      marker.closePopup();
-                    }
-                  }, 3000);
-                }
-              }}
             >
-              <Popup closeButton={false} className="vehicle-mini-popup">
-                <div className="flex flex-col items-center py-0 px-1 leading-tight">
-                  <span className="text-[9px] font-bold text-zinc-900">{v.name}</span>
-                  <span className="font-mono text-[7px] font-black uppercase text-zinc-500 tracking-tighter">
-                    {v.vehicle_number || 'No Number'}
-                  </span>
+              <Tooltip direction="bottom" offset={[0, 10]} opacity={1} className="vehicle-mini-tooltip border-0 bg-transparent shadow-none">
+                <div className="flex items-center rounded-md bg-white px-2 py-1 leading-tight shadow-md border border-zinc-200">
+                  <span className="text-[10px] font-bold text-zinc-900">{v.name}</span>
                 </div>
-              </Popup>
+              </Tooltip>
             </Marker>
           )
         })}
@@ -745,10 +749,10 @@ export default function MapView({
         {activeRoute && (
           <button 
             onClick={() => setShowShareModal(true)}
-            className="absolute bottom-4 left-4 z-1000 flex items-center gap-2 p-2 px-3 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-xl animate-in fade-in slide-in-from-left-4 duration-700 hover:scale-105 transition-all group"
+            className="absolute bottom-4 left-4 z-1000 flex items-center gap-1.5 p-1.5 px-3 rounded-full bg-zinc-900 shadow-lg animate-in fade-in slide-in-from-left-4 duration-700 hover:bg-black hover:scale-105 transition-all group"
           >
-            <Share2 className="w-3 h-3 text-blue-600" />
-            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-300">
+            <Share2 className="w-3 h-3 text-white" />
+            <span className="text-[9px] font-black uppercase tracking-[0.1em] text-white">
               Share
             </span>
           </button>

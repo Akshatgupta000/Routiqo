@@ -115,12 +115,19 @@ class OrderController extends Controller
      * Get bulk counts for cleanup.
      * GET /api/orders/bulk-counts
      */
-    public function bulkCounts(): \Illuminate\Http\JsonResponse
+    public function bulkCounts(Request $request): \Illuminate\Http\JsonResponse
     {
+        $query = \App\Models\Order::query();
+        if ($date = $request->query('date')) {
+            $start = \Carbon\Carbon::parse($date)->startOfDay();
+            $end = \Carbon\Carbon::parse($date)->endOfDay();
+            $query->whereBetween('delivery_date', [$start, $end]);
+        }
+
         return response()->json([
-            'completed' => \App\Models\Order::whereIn('status', [OrderStatus::Delivered->value])->count(),
-            'pending' => \App\Models\Order::where('status', OrderStatus::Pending->value)->count(),
-            'total' => \App\Models\Order::count(),
+            'completed' => (clone $query)->whereIn('status', [OrderStatus::Delivered->value])->count(),
+            'pending' => (clone $query)->where('status', OrderStatus::Pending->value)->count(),
+            'total' => (clone $query)->count(),
         ]);
     }
 
@@ -148,9 +155,15 @@ class OrderController extends Controller
      * Delete all completed (delivered) orders.
      * DELETE /api/orders/completed
      */
-    public function deleteCompleted(): \Illuminate\Http\JsonResponse
+    public function deleteCompleted(Request $request): \Illuminate\Http\JsonResponse
     {
         $query = \App\Models\Order::whereIn('status', [OrderStatus::Delivered->value]);
+        if ($date = $request->query('date')) {
+            $start = \Carbon\Carbon::parse($date)->startOfDay();
+            $end = \Carbon\Carbon::parse($date)->endOfDay();
+            $query->whereBetween('delivery_date', [$start, $end]);
+        }
+        
         $count = $query->count();
         $query->delete();
 
@@ -164,9 +177,15 @@ class OrderController extends Controller
      * Delete all pending orders.
      * DELETE /api/orders/pending
      */
-    public function deletePending(): \Illuminate\Http\JsonResponse
+    public function deletePending(Request $request): \Illuminate\Http\JsonResponse
     {
         $query = \App\Models\Order::where('status', OrderStatus::Pending->value);
+        if ($date = $request->query('date')) {
+            $start = \Carbon\Carbon::parse($date)->startOfDay();
+            $end = \Carbon\Carbon::parse($date)->endOfDay();
+            $query->whereBetween('delivery_date', [$start, $end]);
+        }
+        
         $count = $query->count();
         $query->delete();
 
@@ -180,10 +199,21 @@ class OrderController extends Controller
      * Delete all orders.
      * DELETE /api/orders
      */
-    public function deleteAll(): \Illuminate\Http\JsonResponse
+    public function deleteAll(Request $request): \Illuminate\Http\JsonResponse
     {
-        $count = \App\Models\Order::count();
-        \App\Models\Order::truncate();
+        $query = \App\Models\Order::query();
+        if ($date = $request->query('date')) {
+            $start = \Carbon\Carbon::parse($date)->startOfDay();
+            $end = \Carbon\Carbon::parse($date)->endOfDay();
+            $query->whereBetween('delivery_date', [$start, $end]);
+        }
+
+        $count = $query->count();
+        if ($request->query('date')) {
+            $query->delete();
+        } else {
+            \App\Models\Order::truncate();
+        }
 
         return response()->json([
             'success' => true,
@@ -195,12 +225,18 @@ class OrderController extends Controller
      * Mark all active orders as delivered.
      * POST /api/orders/mark-all-delivered
      */
-    public function markAllDelivered(): \Illuminate\Http\JsonResponse
+    public function markAllDelivered(Request $request): \Illuminate\Http\JsonResponse
     {
         $query = \App\Models\Order::whereIn('status', [
             OrderStatus::Pending->value,
             OrderStatus::Assigned->value,
         ]);
+        
+        if ($date = $request->query('date') ?? $request->input('date')) {
+            $start = \Carbon\Carbon::parse($date)->startOfDay();
+            $end = \Carbon\Carbon::parse($date)->endOfDay();
+            $query->whereBetween('delivery_date', [$start, $end]);
+        }
         
         $count = $query->count();
         $query->update(['status' => OrderStatus::Delivered->value]);

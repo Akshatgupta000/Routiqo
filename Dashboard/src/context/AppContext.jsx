@@ -376,6 +376,16 @@ export function AppProvider({ children }) {
     [toast, clearPlaybackTimer]
   )
 
+  useEffect(() => {
+    let t;
+    if (simulationPhase === 'completed') {
+      t = setTimeout(() => {
+        resetFleetSimulation({ silent: true })
+      }, 2500)
+    }
+    return () => clearTimeout(t)
+  }, [simulationPhase, resetFleetSimulation])
+
   const resetSelection = useCallback(() => {
     resetFleetSimulation({ silent: true })
     setSelectedCenterId(null)

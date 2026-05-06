@@ -98,28 +98,28 @@ export async function clearOrdersByDate(date) {
   return data
 }
 
-export async function getOrderBulkCounts() {
-  const { data } = await client.get('/orders/bulk-counts')
+export async function getOrderBulkCounts(date) {
+  const { data } = await client.get('/orders/bulk-counts', { params: { date } })
   return data
 }
 
-export async function deleteCompletedOrders() {
-  const { data } = await client.delete('/orders/completed')
+export async function deleteCompletedOrders(date) {
+  const { data } = await client.delete('/orders/completed', { params: { date } })
   return data
 }
 
-export async function deletePendingOrders() {
-  const { data } = await client.delete('/orders/pending')
+export async function deletePendingOrders(date) {
+  const { data } = await client.delete('/orders/pending', { params: { date } })
   return data
 }
 
-export async function deleteAllOrders() {
-  const { data } = await client.delete('/orders')
+export async function deleteAllOrders(date) {
+  const { data } = await client.delete('/orders', { params: { date } })
   return data
 }
 
-export async function markAllOrdersAsDelivered() {
-  const { data } = await client.post('/orders/mark-all-delivered')
+export async function markAllOrdersAsDelivered(date) {
+  const { data } = await client.post('/orders/mark-all-delivered', { date })
   return data
 }
 

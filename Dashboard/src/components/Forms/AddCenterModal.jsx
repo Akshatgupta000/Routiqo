@@ -23,7 +23,11 @@ export default function AddCenterModal({ open, onClose, initialData }) {
         address: initialData.address || '',
       }))
     }
-  }, [initialData])
+    // Reset form when modal closes and there's no initialData
+    if (!open && !initialData) {
+      setForm({ name: '', address: '', latitude: '', longitude: '' })
+    }
+  }, [initialData, open])
   const [geocoding, setGeocoding] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -88,7 +92,7 @@ export default function AddCenterModal({ open, onClose, initialData }) {
         </>
       }
     >
-      <form id="add-center-form" className="space-y-4" onSubmit={submit}>
+      <form id="add-center-form" className="space-y-5 pb-32 pt-2" onSubmit={submit}>
         <div>
           <label className="mb-1 block text-xs font-semibold text-zinc-600 dark:text-zinc-400">
             Center Name

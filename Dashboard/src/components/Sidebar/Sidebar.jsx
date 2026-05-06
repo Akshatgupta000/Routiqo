@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import Card from '../UI/Card'
 import Button from '../UI/Button'
 import CalendarPicker from '../UI/CalendarPicker'
@@ -6,7 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { formatDuration, formatKm } from '../../utils/format'
 import AddCenterModal from '../Forms/AddCenterModal'
 import Modal from '../UI/Modal'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import * as api from '../../services/api'
 
 const linkClass = ({ isActive }) =>
@@ -17,6 +17,7 @@ const linkClass = ({ isActive }) =>
   }`
 
 export default function Sidebar() {
+  const navigate = useNavigate()
   const {
     toggleTheme,
     theme,
@@ -43,9 +44,24 @@ export default function Sidebar() {
   const [addCenterOpen, setAddCenterOpen] = useState(false)
   const [deleteConfirmCenter, setDeleteConfirmCenter] = useState(null)
 
-  const currentCenter = centers.find(c => c.id === selectedCenterId)
+  const currentCenter = centers.find(c => String(c.id) === String(selectedCenterId))
 
   const [deleting, setDeleting] = useState(false)
+  const hubRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (hubRef.current && !hubRef.current.contains(event.target)) {
+        setShowHubs(false)
+      }
+    }
+    if (showHubs) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showHubs])
 
   const confirmDeleteCenter = async () => {
     if (!deleteConfirmCenter) return
@@ -135,7 +151,7 @@ export default function Sidebar() {
         </div>
 
         {/* Custom Premium Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={hubRef}>
           <button
             onClick={() => centers.length === 0 ? setAddCenterOpen(true) : setShowHubs(!showHubs)}
             className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl transition-all border ${
@@ -172,15 +188,14 @@ export default function Sidebar() {
           {/* Floating Hub List */}
           {showHubs && (
             <>
-              <div 
-                className="fixed inset-0 z-[60]" 
-                onClick={() => setShowHubs(false)} 
-              />
               <div className="absolute bottom-full mb-2 left-0 right-0 z-[70] bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl shadow-zinc-900/20 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
                 <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pl-2">Available Hubs</span>
                   <button 
-                    onClick={() => setAddCenterOpen(true)}
+                    onClick={() => {
+                      setShowHubs(false);
+                      setAddCenterOpen(true);
+                    }}
                     className="text-[10px] font-black uppercase text-primary hover:opacity-80 px-2 py-1"
                   >
                     + New Hub
@@ -197,6 +212,7 @@ export default function Sidebar() {
                             setActiveMultiRoutes([])
                             setActiveRouteBase(null)
                             setShowHubs(false)
+                            navigate('/')
                           }}
                           className={`flex-1 flex items-center gap-3 p-2.5 rounded-xl transition-all ${
                             isSelected 

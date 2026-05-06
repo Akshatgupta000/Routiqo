@@ -45,25 +45,28 @@ export function numberedStopIcon(n, color = '#A3FF3F', isPriority = false) {
   })
 }
 
-export function vehicleIcon(status = 'available') {
+export function vehicleIcon(status = 'available', scale = 1) {
   const color = status === 'available' ? '#A3FF3F' : '#ff0000'
+  const size = 20 * scale
   return L.divIcon({
     className: 'custom-marker-vehicle',
-    html: `<div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 20px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); color: ${color};">🚐</div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    html: `<div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: ${size}px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); color: ${color};">🚐</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   })
 }
 
-export function vehicleIconHighlighted(color = '#A3FF3F') {
+export function vehicleIconHighlighted(color = '#A3FF3F', scale = 1) {
+  const size = 32 * scale
+  const fontSize = 28 * scale
   return L.divIcon({
     className: 'custom-marker-vehicle custom-marker-vehicle--highlighted',
     html: `
       <div class="relative">
         <div class="absolute inset-0 animate-ping rounded-full bg-blue-500/20" style="background-color: ${color}20;"></div>
-        <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 28px; filter: drop-shadow(0 2px 4px ${color}88); color: ${color}; position: relative; z-index: 10;">🚐</div>
+        <div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: ${fontSize}px; filter: drop-shadow(0 2px 4px ${color}88); color: ${color}; position: relative; z-index: 10;">🚐</div>
       </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   })
 }

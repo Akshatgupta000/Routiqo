@@ -27,6 +27,9 @@ class RouteOptimizationResource extends JsonResource
                 return [
                     'sequence' => (int) $stop->sequence,
                     'order_id' => $stop->order_id,
+                    'order' => $order ? [
+                        'address' => $order->address,
+                    ] : null,
                     'latitude' => $order ? (float) $order->latitude : 0.0,
                     'longitude' => $order ? (float) $order->longitude : 0.0,
                     'priority' => $order ? ($order->priority instanceof \BackedEnum ? $order->priority->value : $order->priority) : 'normal',
@@ -41,8 +44,40 @@ class RouteOptimizationResource extends JsonResource
 
         $center = $this->deliveryCenter;
 
+        $routeName = 'Route #' . substr($this->id, -6);
+        $firstStop = $stops[0] ?? null;
+        if ($firstStop && isset($firstStop['order']['address']) && $firstStop['order']['address']) {
+            $addressParts = array_map('trim', explode(',', $firstStop['order']['address']));
+            
+            $street = '';
+            // Try to find a part that clearly looks like a road name
+            foreach ($addressParts as $part) {
+                if (preg_match('/\b(Road|Rd|Street|St|Avenue|Ave|Marg|Highway|Hwy|Lane|Ln|Boulevard|Blvd|Drive|Dr|Way|Square|Sq|Plaza|Parkway|Pkwy|Alley|Court|Ct|Circle|Cir)\b/i', $part)) {
+                    $street = $part;
+                    break;
+                }
+            }
+            
+            // Smart fallback if no keyword is found
+            if (empty($street)) {
+                if (count($addressParts) > 1) {
+                    // In standard Nominatim, index 1 is often the road if index 0 is a building/number
+                    $street = is_numeric(trim($addressParts[0], " \t\n\r\0\x0B-/#")) ? $addressParts[1] : $addressParts[0];
+                } else {
+                    $street = $addressParts[0];
+                }
+            }
+            
+            if (!empty($street)) {
+                // Clean up leading numbers or irrelevant characters
+                $street = preg_replace('/^[0-9\-\#]+\s+/', '', $street);
+                $routeName = 'Route via ' . trim($street);
+            }
+        }
+
         return [
             'route_id' => $this->id,
+            'route_name' => $routeName,
             'delivery_center' => $center ? [
                 'id' => $center->id,
                 'name' => (string) $center->name,
