@@ -137,7 +137,7 @@ export default function Sidebar() {
         {/* Custom Premium Dropdown */}
         <div className="relative">
           <button
-            onClick={() => setShowHubs(!showHubs)}
+            onClick={() => centers.length === 0 ? setAddCenterOpen(true) : setShowHubs(!showHubs)}
             className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl transition-all border ${
               showHubs 
                 ? 'bg-zinc-50 border-zinc-300 ring-2 ring-zinc-900/5 dark:bg-zinc-800 dark:border-zinc-600' 
@@ -145,26 +145,28 @@ export default function Sidebar() {
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${currentCenter ? 'bg-zinc-900 dark:bg-white' : ''}`}>
-                <span className="text-white dark:text-zinc-900 text-xs font-black">
-                  {currentCenter ? currentCenter.name.charAt(0).toUpperCase() : ''}
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${currentCenter ? 'bg-zinc-900 dark:bg-white' : (centers.length === 0 ? 'bg-primary/10 text-primary' : '')}`}>
+                <span className={`text-xs font-black ${currentCenter ? 'text-white dark:text-zinc-900' : ''}`}>
+                  {currentCenter ? currentCenter.name.charAt(0).toUpperCase() : (centers.length === 0 ? '+' : '○')}
                 </span>
               </div>
               <div className="text-left min-w-0">
                 <p className={`text-sm font-black truncate tracking-tight leading-none ${currentCenter ? 'text-zinc-900 dark:text-white' : 'text-primary'}`}>
-                  {currentCenter ? currentCenter.name : 'Select a Hub'}
+                  {centers.length === 0 ? 'New Hub' : (currentCenter ? currentCenter.name : 'Select a Hub')}
                 </p>
                 <p className="text-[10px] text-zinc-500 truncate">
-                  {currentCenter ? currentCenter.address : 'Click to choose'}
+                  {centers.length === 0 ? 'Create your first hub' : (currentCenter ? currentCenter.address : 'Click to choose')}
                 </p>
               </div>
             </div>
-            <svg 
-              className={`w-4 h-4 text-zinc-400 transition-transform duration-300 ${showHubs ? 'rotate-180' : ''}`} 
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-            </svg>
+            {centers.length > 0 && (
+              <svg 
+                className={`w-4 h-4 text-zinc-400 transition-transform duration-300 ${showHubs ? 'rotate-180' : ''}`} 
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            )}
           </button>
 
           {/* Floating Hub List */}
