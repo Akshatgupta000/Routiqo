@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   useEffect(() => {
@@ -11,7 +13,12 @@ function App() {
   }, []);
 
   return (
-    <Landing />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

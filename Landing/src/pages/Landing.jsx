@@ -11,6 +11,15 @@ import useAuthModal from '../hooks/useAuthModal';
 const Landing = () => {
   const { isOpen, mode, openModal, closeModal } = useAuthModal();
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('login') === 'true') {
+      openModal('login');
+      // Clear the param from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [openModal]);
+
   return (
     <div className="min-h-screen bg-[#F5F5F5] p-0 md:p-3 lg:p-4">
       {/* Main Container Card */}

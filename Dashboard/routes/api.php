@@ -8,8 +8,13 @@ use App\Http\Controllers\Api\VehicleController;
 use Illuminate\Support\Facades\Route;
 
 // Public Auth Routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+});
 
 Route::get('/debug-auth', function (\Illuminate\Http\Request $request) {
     return response()->json([
