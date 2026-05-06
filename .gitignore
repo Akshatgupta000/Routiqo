@@ -5,3 +5,6 @@ dist/
 .idea/
 .vscode/
 *.log
+vendor/
+.env.local
+.env.production.local

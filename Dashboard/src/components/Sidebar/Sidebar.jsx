@@ -284,7 +284,7 @@ export default function Sidebar() {
           <button 
             onClick={() => {
               localStorage.clear()
-              window.location.href = 'http://localhost:5173'
+              window.location.href = import.meta.env.VITE_LANDING_URL || 'http://localhost:5173'
             }}
             className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all"
             title="Logout"

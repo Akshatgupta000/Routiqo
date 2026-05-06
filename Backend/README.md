@@ -85,9 +85,11 @@ Routiqo follows a clean, decoupled architecture:
 - **Composer** & **NPM**
 - **MongoDB**: A running instance (Local or Atlas)
 
-### 1. Backend Setup (Laravel)
+### 1. Backend Setup
 ```bash
-cd Backend
+# Clone the repository
+git clone https://github.com/Akshatgupta000/Routiqo.git
+cd Routiqo
 
 # Install dependencies
 composer install
@@ -100,54 +102,34 @@ php artisan key:generate
 Update your `.env` with MongoDB and API credentials:
 ```env
 DB_CONNECTION=mongodb
-MONGODB_URI="mongodb+srv://user:password@cluster.mongodb.net/dbname"
-MONGODB_DATABASE=logiroute
+DB_HOST=127.0.0.1
+DB_PORT=27017
+DB_DATABASE=routiqo
+
+# Geocoding (e.g., OpenStreetMap/Nominatim or others)
+GEOCODING_SERVICE=nominatim
 ```
 
-### 2. Dashboard Setup (React)
+### 2. Frontend Setup
 ```bash
-cd Dashboard
+cd frontend
 
 # Install dependencies
 npm install
 
 # Environment configuration
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-### 3. Landing Setup (React)
+### 3. Running the Platform
+**Terminal 1 (Laravel):**
 ```bash
-cd Landing
-
-# Install dependencies
-npm install
-
-# Environment configuration
-cp .env.example .env
-```
-
-### 4. Running the Platform Locally
-You will need three terminal windows to run all services:
-
-**Terminal 1 (Laravel Backend):**
-```bash
-cd Backend
 php artisan serve
-# Runs on http://localhost:8000
 ```
 
-**Terminal 2 (Landing Page):**
+**Terminal 2 (React):**
 ```bash
-cd Landing
 npm run dev
-# Runs on http://localhost:5173
-```
-
-**Terminal 3 (Dashboard):**
-```bash
-cd Dashboard
-npm run dev
-# Runs on http://localhost:5174
 ```
 
 ---

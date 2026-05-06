@@ -26,7 +26,7 @@ export default function Layout() {
 
     const token = localStorage.getItem('auth_token')
     if (!token) {
-      window.location.href = 'http://localhost:5173'
+      window.location.href = import.meta.env.VITE_LANDING_URL || 'http://localhost:5173'
     }
   }, [])
 

@@ -22,7 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage() ?: 'An unexpected error occurred',
-                    'trace' => config('app.debug') ? $e->getTrace() : null
                 ], $statusCode);
             }
         });

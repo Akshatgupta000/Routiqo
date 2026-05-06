@@ -16,15 +16,6 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
-Route::get('/debug-auth', function (\Illuminate\Http\Request $request) {
-    return response()->json([
-        'auth_check' => auth('sanctum')->check(),
-        'user' => auth('sanctum')->user(),
-        'bearer' => $request->bearerToken(),
-        'guards' => config('auth.guards'),
-        'sanctum_model' => \Laravel\Sanctum\Sanctum::$personalAccessTokenModel,
-    ]);
-});
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
