@@ -225,30 +225,6 @@ export function AppProvider({ children }) {
     return list
   }, [])
 
-  const addCenterAction = useCallback(async (payload) => {
-    setLoading((l) => ({ ...l, addCenter: true }))
-    try {
-      const newCenter = await api.createCenter(payload)
-      await refreshCenters()
-      
-      // Auto-select and focus the new center
-      setSelectedCenterId(newCenter.id)
-      setMapFocus({
-        lat: Number(newCenter.latitude),
-        lng: Number(newCenter.longitude),
-        zoom: 12
-      })
-      
-      toast(`Delivery center "${newCenter.name}" added and centered.`)
-      return newCenter
-    } catch (e) {
-      const msg = e?.response?.data?.message || e.message || 'Failed to add center'
-      toast(msg, 'error')
-      throw e
-    } finally {
-      setLoading((l) => ({ ...l, addCenter: false }))
-    }
-  }, [refreshCenters, toast])
 
   const refreshOrders = useCallback(async (filters = {}) => {
     // We remove hub/status filters here so they don't clobber global state
@@ -317,10 +293,13 @@ export function AppProvider({ children }) {
     }
   }, [centers, refreshZones])
 
-  // Automatically sync zones when hubs change
   useEffect(() => {
     if (centers.length >= 2) {
       void generateVoronoiZonesAction()
+    } else {
+      // Clear zones if not enough centers for Voronoi
+      setServiceZones([])
+      api.saveZones([]) // Clear on backend too
     }
   }, [centers.length, generateVoronoiZonesAction])
 
@@ -476,6 +455,84 @@ export function AppProvider({ children }) {
     activeMultiRoutes.length,
     resetFleetSimulation,
   ])
+
+  const addCenterAction = useCallback(async (payload) => {
+    setLoading((l) => ({ ...l, addCenter: true }))
+    try {
+      const response = await api.createCenter(payload)
+      const newCenter = response.data || response
+      
+      // Fast refresh: Update centers state immediately
+      setCenters(prev => [...prev, newCenter].sort((a, b) => a.name.localeCompare(b.name)))
+      
+      // Auto-select and focus the new center
+      setSelectedCenterId(newCenter.id)
+      setMapFocus({
+        lat: Number(newCenter.latitude),
+        lng: Number(newCenter.longitude),
+        zoom: 12
+      })
+      
+      toast(`Delivery center "${newCenter.name}" added. Auto-capturing nearby orders...`)
+      
+      // Trigger route generation and data sync in background without blocking UI
+      generateRoutesAction(newCenter.id).then(() => {
+        refreshOrders()
+        refreshVehicles()
+      })
+      
+      return newCenter
+    } catch (e) {
+      const msg = e?.response?.data?.message || e.message || 'Failed to add center'
+      toast(msg, 'error')
+      throw e
+    } finally {
+      setLoading((l) => ({ ...l, addCenter: false }))
+    }
+  }, [setCenters, toast, refreshOrders, refreshVehicles, generateRoutesAction])
+
+  const addOrderAction = useCallback(async (payload) => {
+    setLoading((l) => ({ ...l, addOrder: true }))
+    try {
+      const response = await api.createOrder(payload)
+      const newOrder = response.data || response
+      
+      // Fast refresh: Update orders state if it matches current date
+      const orderDate = newOrder.delivery_date?.split('T')[0]
+      if (orderDate === selectedDate) {
+        setOrders(prev => [newOrder, ...prev])
+      }
+      
+      toast(`Order created and geocoded.`)
+      return newOrder
+    } catch (e) {
+      const msg = e?.response?.data?.message || e.message || 'Failed to create order'
+      toast(msg, 'error')
+      throw e
+    } finally {
+      setLoading((l) => ({ ...l, addOrder: false }))
+    }
+  }, [selectedDate, setOrders, toast])
+
+  const addVehicleAction = useCallback(async (payload) => {
+    setLoading((l) => ({ ...l, addVehicle: true }))
+    try {
+      const response = await api.createVehicle(payload)
+      const newVehicle = response.data || response
+      
+      // Fast refresh: Update vehicles state immediately
+      setVehicles(prev => [...prev, newVehicle])
+      
+      toast(`Vehicle ${newVehicle.vehicle_number} added.`)
+      return newVehicle
+    } catch (e) {
+      const msg = e?.response?.data?.message || e.message || 'Failed to add vehicle'
+      toast(msg, 'error')
+      throw e
+    } finally {
+      setLoading((l) => ({ ...l, addVehicle: false }))
+    }
+  }, [setVehicles, toast])
 
   const selectRouteFromList = useCallback((route) => {
     const stripped = normalizeRouteForSimulation(stripMeta(route))
@@ -663,7 +720,9 @@ export function AppProvider({ children }) {
       toggleTheme,
       centers,
       orders,
+      setOrders,
       vehicles,
+      setVehicles,
       routesList,
       comparisons,
       setComparisons,
@@ -695,6 +754,8 @@ export function AppProvider({ children }) {
       mapFocus,
       setMapFocus,
       addCenterAction,
+      addOrderAction,
+      addVehicleAction,
       draftDeliveries,
       addDraftDelivery,
       removeDraftDelivery,
@@ -723,7 +784,9 @@ export function AppProvider({ children }) {
       toggleTheme,
       centers,
       orders,
+      setOrders,
       vehicles,
+      setVehicles,
       routesList,
       comparisons,
       activeRoute,

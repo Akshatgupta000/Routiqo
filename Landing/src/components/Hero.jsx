@@ -22,7 +22,7 @@ const Hero = () => {
               <span className="text-primary bg-dark px-4 py-1 rounded-2xl inline-block mt-2">Deliver Smarter.</span>
             </h1>
             <p className="text-xl text-text-secondary max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed">
-              RouteOps helps logistics teams automate dispatching, optimize delivery routes, and track fleet operations in real-time. Efficiency at every mile.
+              Routiqo helps logistics teams automate dispatching, optimize delivery routes, and track fleet operations in real-time. Efficiency at every mile.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -60,7 +60,7 @@ const Hero = () => {
             <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
               <img 
                 src="/hero.png" 
-                alt="RouteOps Platform Illustration" 
+                alt="Routiqo Platform Illustration" 
                 className="w-full h-auto object-cover"
               />
             </div>

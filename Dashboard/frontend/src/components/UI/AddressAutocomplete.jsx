@@ -81,6 +81,12 @@ export default function AddressAutocomplete({
           value={value}
           onChange={handleInputChange}
           onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && showDropdown && suggestions.length > 0) {
+              e.preventDefault()
+              handleSelect(suggestions[0])
+            }
+          }}
           autoFocus={autoFocus}
         />
         {loading && (

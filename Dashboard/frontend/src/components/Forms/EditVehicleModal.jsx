@@ -97,11 +97,12 @@ export default function EditVehicleModal({ open, onClose, onUpdated, centers, to
           <select
             required
             className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-            value={form.delivery_center_id}
+            value={form.delivery_center_id || ''}
             onChange={(e) =>
               setForm((f) => ({ ...f, delivery_center_id: e.target.value }))
             }
           >
+            <option value="" disabled>Select a center...</option>
             {centers.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}

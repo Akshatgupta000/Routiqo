@@ -16,7 +16,7 @@ class ServiceZoneController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'zones' => 'required|array',
+            'zones' => 'present|array',
             'zones.*.hub_id' => 'required',
             'zones.*.polygon' => 'required|array',
         ]);

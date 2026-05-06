@@ -18,6 +18,7 @@ Route::delete('/orders/clear-by-date', [OrderController::class, 'clearByDate']);
 Route::delete('/orders/completed', [OrderController::class, 'deleteCompleted']);
 Route::delete('/orders/pending', [OrderController::class, 'deletePending']);
 Route::delete('/orders', [OrderController::class, 'deleteAll']);
+Route::post('/orders/mark-all-delivered', [OrderController::class, 'markAllDelivered']);
 Route::get('/orders', [OrderController::class, 'index']);
 Route::patch('/orders/{id}', [OrderController::class, 'update']);
 Route::post('/orders/{id}/assign', [OrderController::class, 'assign']);

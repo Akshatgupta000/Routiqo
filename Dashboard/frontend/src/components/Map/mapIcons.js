@@ -3,7 +3,7 @@ import L from 'leaflet'
 export function centerIcon() {
   return L.divIcon({
     className: 'custom-marker-center',
-    html: `<div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-lg shadow-lg text-white">▣</div>`,
+    html: `<div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#A3FF3F] text-lg shadow-lg text-black">▣</div>`,
     iconSize: [40, 40],
     iconAnchor: [20, 20],
   })
@@ -27,7 +27,7 @@ export function orderIcon(color = '#ef4444', isPriority = false) {
   })
 }
 
-export function numberedStopIcon(n, color = '#10b981', isPriority = false) {
+export function numberedStopIcon(n, color = '#A3FF3F', isPriority = false) {
   const borderClass = isPriority ? 'border-amber-400 border-[3px]' : 'border-white border-2'
   const shadowClass = isPriority ? 'shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'shadow-lg'
   const badge = isPriority ? '<div class="absolute -top-2 -right-2 bg-amber-400 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] font-black border-2 border-white">★</div>' : ''
@@ -35,7 +35,7 @@ export function numberedStopIcon(n, color = '#10b981', isPriority = false) {
   return L.divIcon({
     className: 'custom-marker-stop',
     html: `
-      <div class="relative flex h-9 w-9 items-center justify-center rounded-full ${borderClass} ${shadowClass} text-xs font-bold text-white transition-all scale-100 hover:scale-110" style="background: ${color}">
+      <div class="relative flex h-9 w-9 items-center justify-center rounded-full ${borderClass} ${shadowClass} text-xs font-bold text-black transition-all scale-100 hover:scale-110" style="background: ${color}">
         ${n}
         ${badge}
       </div>
@@ -46,7 +46,7 @@ export function numberedStopIcon(n, color = '#10b981', isPriority = false) {
 }
 
 export function vehicleIcon(status = 'available') {
-  const color = status === 'available' ? '#10b981' : '#ff0000'
+  const color = status === 'available' ? '#A3FF3F' : '#ff0000'
   return L.divIcon({
     className: 'custom-marker-vehicle',
     html: `<div class="vehicle-rot" style="will-change: transform; transform: rotate(0deg); line-height: 1; font-size: 20px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); color: ${color};">🚐</div>`,
@@ -55,7 +55,7 @@ export function vehicleIcon(status = 'available') {
   })
 }
 
-export function vehicleIconHighlighted(color = '#2563eb') {
+export function vehicleIconHighlighted(color = '#A3FF3F') {
   return L.divIcon({
     className: 'custom-marker-vehicle custom-marker-vehicle--highlighted',
     html: `

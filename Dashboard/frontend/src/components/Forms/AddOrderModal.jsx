@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useApp } from '../../context/AppContext'
 import Modal from '../UI/Modal'
 import Button from '../UI/Button'
 import CalendarPicker from '../UI/CalendarPicker'
@@ -12,7 +13,8 @@ function formatDateDisplay(dateStr) {
   return d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-export default function AddOrderModal({ open, onClose, onCreated, toast }) {
+export default function AddOrderModal({ open, onClose, toast }) {
+  const { addOrderAction } = useApp()
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({
     address: '',
@@ -21,9 +23,14 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
   })
   const [saving, setSaving] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [lastSubmitted, setLastSubmitted] = useState(0)
 
   const submit = async (e) => {
     e.preventDefault()
+    
+    // Prevent double submission if they spam Enter
+    if (Date.now() - lastSubmitted < 1000) return
+    setLastSubmitted(Date.now())
     
     if (!form.address.trim()) {
       toast('Please enter a delivery address', 'error')
@@ -32,23 +39,16 @@ export default function AddOrderModal({ open, onClose, onCreated, toast }) {
 
     setSaving(true)
     try {
-      await api.createOrder({
+      await addOrderAction({
         address: form.address,
         delivery_date: form.delivery_date,
         priority: form.priority,
       })
-      toast('Order created (address geocoded automatically)')
-      onCreated?.()
       onClose?.()
       setForm({ address: '', delivery_date: today, priority: 'normal' })
       setShowCalendar(false)
     } catch (err) {
-      toast(
-        err?.response?.data?.errors?.address?.[0] || 
-        err?.response?.data?.message || 
-        'Could not create order',
-        'error'
-      )
+      // toast handled in action
     } finally {
       setSaving(false)
     }

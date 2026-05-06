@@ -27,9 +27,16 @@ export default function Sidebar() {
     selectedDate,
     setSelectedDate,
     refreshCenters,
+    refreshOrders,
+    refreshVehicles,
+    refreshRoutes,
+    setOrders,
+    setVehicles,
     setActiveMultiRoutes,
     setActiveRouteBase,
     toast,
+    resetSelection,
+    generateRoutesAction,
   } = useApp()
 
   const [showHubs, setShowHubs] = useState(false)
@@ -38,20 +45,43 @@ export default function Sidebar() {
 
   const currentCenter = centers.find(c => c.id === selectedCenterId)
 
+  const [deleting, setDeleting] = useState(false)
+
   const confirmDeleteCenter = async () => {
     if (!deleteConfirmCenter) return
 
+    setDeleting(true)
     try {
-      await api.deleteCenter(deleteConfirmCenter.id)
-      toast('Delivery hub removed')
-      if (selectedCenterId === deleteConfirmCenter.id) {
-        setSelectedCenterId(null)
-      }
+      const response = await api.deleteCenter(deleteConfirmCenter.id)
+      toast(response.message || 'Hub deleted and orders reassigned')
+      
+      // 1. Reset map and selections
+      resetSelection()
+      
+      // 2. Optimistic local state clearing for immediate UI response
+      // This ensures vehicles and orders disappear instantly from map/sidebar
+      setVehicles(prev => prev.filter(v => String(v.delivery_center_id) !== String(deleteConfirmCenter.id)))
+      setOrders(prev => prev.filter(o => String(o.delivery_center_id) !== String(deleteConfirmCenter.id)))
+      
       setDeleteConfirmCenter(null)
       setShowHubs(false)
-      refreshCenters()
+      
+      // 3. Refresh all data to sync with the backend reassignments
+      await Promise.all([
+        refreshCenters(),
+        refreshOrders(),
+        refreshVehicles(),
+        refreshRoutes()
+      ])
+      
+      // 4. Automatically trigger global re-optimization for remaining hubs
+      await generateRoutesAction()
+      
     } catch (err) {
-      toast('Failed to delete hub', 'error')
+      const msg = err?.response?.data?.message || err.message || 'Failed to delete hub safely'
+      toast(msg, 'error')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -64,7 +94,7 @@ export default function Sidebar() {
             Last-Mile
           </p>
           <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
-            RouteOps
+            Routiqo
           </h1>
         </div>
         <Button variant="secondary" className="!px-3 !py-2 text-xs" onClick={toggleTheme}>
@@ -115,13 +145,13 @@ export default function Sidebar() {
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-white flex items-center justify-center shrink-0">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${currentCenter ? 'bg-zinc-900 dark:bg-white' : ''}`}>
                 <span className="text-white dark:text-zinc-900 text-xs font-black">
-                  {currentCenter ? currentCenter.name.charAt(0).toUpperCase() : '?'}
+                  {currentCenter ? currentCenter.name.charAt(0).toUpperCase() : ''}
                 </span>
               </div>
               <div className="text-left min-w-0">
-                <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">
+                <p className={`text-sm font-black truncate tracking-tight leading-none ${currentCenter ? 'text-zinc-900 dark:text-white' : 'text-primary'}`}>
                   {currentCenter ? currentCenter.name : 'Select a Hub'}
                 </p>
                 <p className="text-[10px] text-zinc-500 truncate">
@@ -149,7 +179,7 @@ export default function Sidebar() {
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pl-2">Available Hubs</span>
                   <button 
                     onClick={() => setAddCenterOpen(true)}
-                    className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-500 px-2 py-1"
+                    className="text-[10px] font-black uppercase text-primary hover:opacity-80 px-2 py-1"
                   >
                     + New Hub
                   </button>
@@ -172,7 +202,7 @@ export default function Sidebar() {
                               : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
                           }`}
                         >
-                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-indigo-400' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
+                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
                           <div className="text-left min-w-0">
                             <p className="text-xs font-bold truncate">{c.name}</p>
                             <p className={`text-[9px] truncate ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>{c.address}</p>
@@ -206,8 +236,10 @@ export default function Sidebar() {
         title="Delete Delivery Hub?"
         footer={
           <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => setDeleteConfirmCenter(null)}>Cancel</Button>
-            <Button variant="danger" onClick={confirmDeleteCenter}>Delete Hub</Button>
+            <Button variant="ghost" onClick={() => setDeleteConfirmCenter(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDeleteCenter} disabled={deleting}>
+              {deleting ? 'Deleting Hub...' : 'Delete Hub'}
+            </Button>
           </div>
         }
       >

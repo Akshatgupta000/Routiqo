@@ -30,14 +30,24 @@ export default function Dashboard() {
   const ordersOnMap = useMemo(
     () =>
       orders.filter((o) => {
-        // Always show pending orders (red dots)
-        if (o.status === 'pending') return true
-        
-        // Don't show completed orders if user wants them gone
-        if (o.status === 'delivered') return false
+        // Show orders belonging to the selected center or orphans that are within range
+        const isAssignedToCenter = !selectedCenterId || String(o.delivery_center_id) === String(selectedCenterId)
+        if (isAssignedToCenter) return true
 
-        // Show orders belonging to the selected center
-        return !selectedCenterId || o.delivery_center_id === selectedCenterId
+        // If orphan, check if near the selected center (approx 10km)
+        if (o.delivery_center_id === null && selectedCenterId) {
+          const center = centers.find(c => String(c.id) === String(selectedCenterId))
+          if (center) {
+            const dist = Math.sqrt(
+              Math.pow(Number(o.latitude) - Number(center.latitude), 2) + 
+              Math.pow(Number(o.longitude) - Number(center.longitude), 2)
+            )
+            // 0.09 deg is roughly 10km (Strict)
+            return dist < 0.09 // ~10km (Strict)
+          }
+        }
+
+        return false
       }),
     [orders, selectedCenterId]
   )
@@ -67,7 +77,7 @@ export default function Dashboard() {
                <span className="text-[10px] uppercase font-bold text-zinc-400">Zones</span>
                <button 
                  onClick={() => setShowZones(!showZones)}
-                 className={`w-8 h-4 rounded-full transition-colors relative ${showZones ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                 className={`w-8 h-4 rounded-full transition-colors relative ${showZones ? 'bg-primary' : 'bg-zinc-300 dark:bg-zinc-700'}`}
                >
                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showZones ? 'left-4.5' : 'left-0.5'}`} />
                </button>
@@ -89,7 +99,11 @@ export default function Dashboard() {
                   <div>
                     <p className="text-[10px] font-bold uppercase text-zinc-500">Orders</p>
                     <p className="text-sm font-bold text-zinc-900 dark:text-white">
-                      {orders.filter(o => String(o.delivery_center_id) === String(selectedCenterId) && o.status !== 'delivered').length}
+                      {orders.filter(o => {
+                        const isForCenter = String(o.delivery_center_id) === String(selectedCenterId)
+                        const isOrphan = o.delivery_center_id === null
+                        return (isForCenter || isOrphan) && o.status !== 'delivered'
+                      }).length}
                     </p>
                   </div>
                   <div>

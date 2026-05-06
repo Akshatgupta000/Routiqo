@@ -53,7 +53,7 @@ export default function Vehicles() {
     {
       key: 'center',
       label: 'Center',
-      render: (r) => r.delivery_center?.name ?? `#${r.delivery_center_id}`,
+      render: (r) => r.delivery_center?.name ?? (r.delivery_center_id ? `#${r.delivery_center_id}` : 'Not Assigned'),
     },
     {
       key: 'actions',

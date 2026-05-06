@@ -26,7 +26,7 @@ const CTA = () => {
           </h2>
           
           <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
-            Join 500+ companies optimizing their logistics with RouteOps. Start your 14-day free trial today. No credit card required.
+            Join 500+ companies optimizing their logistics with Routiqo. Start your 14-day free trial today. No credit card required.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

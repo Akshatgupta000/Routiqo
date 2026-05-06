@@ -1,17 +1,17 @@
-# 🚚 RouteOps: Professional Fleet Dispatch & Route Optimization
+# 🚚 Routiqo: Professional Fleet Dispatch & Route Optimization
 
 [![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 
-**RouteOps** is a state-of-the-art, full-stack logistics management platform designed to solve the "Last Mile Delivery" challenge. It leverages advanced spatial partitioning, real-time map visualization, and high-performance routing engines to automate fleet dispatching and optimize delivery sequences.
+**Routiqo** is a state-of-the-art, full-stack logistics management platform designed to solve the "Last Mile Delivery" challenge. It leverages advanced spatial partitioning, real-time map visualization, and high-performance routing engines to automate fleet dispatching and optimize delivery sequences.
 
 ---
 
 ## 🌟 Project Overview
 
-In the high-stakes world of logistics, efficiency is everything. **RouteOps** transforms manual, error-prone dispatching into a streamlined, automated process. By using **Voronoi-based spatial clustering** and **OSRM-powered routing**, it ensures that every order is handled by the most efficient hub and delivered via the most optimal path.
+In the high-stakes world of logistics, efficiency is everything. **Routiqo** transforms manual, error-prone dispatching into a streamlined, automated process. By using **Voronoi-based spatial clustering** and **OSRM-powered routing**, it ensures that every order is handled by the most efficient hub and delivered via the most optimal path.
 
 ### Key Value Propositions
 - **Reduced Fuel Costs**: Up to 20% reduction in total fleet travel distance.
@@ -65,7 +65,7 @@ In the high-stakes world of logistics, efficiency is everything. **RouteOps** tr
 
 ## 🏗️ System Architecture
 
-RouteOps follows a clean, decoupled architecture:
+Routiqo follows a clean, decoupled architecture:
 
 1.  **Frontend (React)**: Handles user interaction, map state synchronization via `AppContext`, and real-time simulation rendering.
 2.  **API Layer (Laravel)**: Provides a secure RESTful interface for all management operations.
@@ -88,8 +88,8 @@ RouteOps follows a clean, decoupled architecture:
 ### 1. Backend Setup
 ```bash
 # Clone the repository
-git clone https://github.com/Akshatgupta000/RouteOps.git
-cd RouteOps
+git clone https://github.com/Akshatgupta000/Routiqo.git
+cd Routiqo
 
 # Install dependencies
 composer install
@@ -104,7 +104,7 @@ Update your `.env` with MongoDB and API credentials:
 DB_CONNECTION=mongodb
 DB_HOST=127.0.0.1
 DB_PORT=27017
-DB_DATABASE=routeops
+DB_DATABASE=routiqo
 
 # Geocoding (e.g., OpenStreetMap/Nominatim or others)
 GEOCODING_SERVICE=nominatim

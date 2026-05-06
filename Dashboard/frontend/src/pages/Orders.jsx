@@ -32,6 +32,8 @@ export default function Orders() {
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [showMarkAllConfirm, setShowMarkAllConfirm] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
   
   // Suggestion states
   const [centerSuggestion, setCenterSuggestion] = useState(null)
@@ -331,7 +333,17 @@ export default function Orders() {
               </span>
             </div>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setShowMarkAllConfirm(true)}
+              disabled={orders.length === 0}
+              className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all hover:bg-blue-100 active:scale-95 disabled:opacity-50 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Mark All Delivered</span>
+            </button>
             <CleanupOrders 
               onActionComplete={() => {
                 refreshOrders()
@@ -384,6 +396,42 @@ export default function Orders() {
       >
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Are you sure you want to delete this order? This action cannot be undone.
+        </p>
+      </Modal>
+
+      <Modal
+        open={showMarkAllConfirm}
+        onClose={() => setShowMarkAllConfirm(false)}
+        title="Mark All Orders as Delivered?"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={() => setShowMarkAllConfirm(false)}>Cancel</Button>
+            <Button 
+              variant="primary" 
+              disabled={bulkLoading}
+              onClick={async () => {
+                setBulkLoading(true)
+                try {
+                  const res = await api.markAllOrdersAsDelivered()
+                  toast(`Success: ${res.updated_count} orders marked as delivered`)
+                  refreshOrders()
+                  refreshRoutes()
+                  refreshVehicles()
+                  setShowMarkAllConfirm(false)
+                } catch (err) {
+                  toast('Bulk update failed', 'error')
+                } finally {
+                  setBulkLoading(false)
+                }
+              }}
+            >
+              {bulkLoading ? 'Updating...' : 'Confirm Bulk Update'}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          This will update the status of all <span className="font-semibold text-zinc-900 dark:text-white">pending</span> and <span className="font-semibold text-zinc-900 dark:text-white">assigned</span> orders to <span className="font-semibold text-zinc-900 dark:text-white">delivered</span>.
         </p>
       </Modal>
     </div>

@@ -252,6 +252,7 @@ export default function MapView({
         key={mapInstanceKey}
         center={[20.5937, 78.9629]}
         zoom={5}
+        preferCanvas={true}
         className="z-0 h-full w-full min-h-[320px] sm:min-h-0"
         scrollWheelZoom
         style={{ height: '100%', minHeight: '100%' }}

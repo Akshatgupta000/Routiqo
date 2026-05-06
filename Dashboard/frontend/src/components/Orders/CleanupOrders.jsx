@@ -47,6 +47,9 @@ export default function CleanupOrders({ onActionComplete, toast }) {
       } else if (type === 'all') {
         res = await api.deleteAllOrders()
         toast(`All ${res.deleted_count} orders deleted`)
+      } else if (type === 'delivered-all') {
+        res = await api.markAllOrdersAsDelivered()
+        toast(`Success: ${res.updated_count} orders marked as delivered`)
       }
       
       setConfirmModal(null)

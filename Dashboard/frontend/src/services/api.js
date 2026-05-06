@@ -100,6 +100,11 @@ export async function deleteAllOrders() {
   return data
 }
 
+export async function markAllOrdersAsDelivered() {
+  const { data } = await client.post('/orders/mark-all-delivered')
+  return data
+}
+
 export async function assignOrder(id) {
   const { data } = await client.post(`/orders/${id}/assign`)
   return data

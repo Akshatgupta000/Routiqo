@@ -13,7 +13,10 @@ class EloquentVehicleRepository implements VehicleRepositoryInterface
         $query = Vehicle::query()->with('deliveryCenter')->orderBy('id');
 
         if ($deliveryCenterId !== null) {
-            $query->where('delivery_center_id', $deliveryCenterId);
+            $query->where(function ($q) use ($deliveryCenterId) {
+                $q->where('delivery_center_id', $deliveryCenterId)
+                  ->orWhereNull('delivery_center_id');
+            });
         }
 
         return $query->get();

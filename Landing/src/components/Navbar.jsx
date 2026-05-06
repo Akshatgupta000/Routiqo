@@ -36,7 +36,7 @@ const Navbar = () => {
             <div className="w-8 h-8 bg-dark rounded-lg flex items-center justify-center">
               <div className="w-4 h-4 bg-primary rounded-sm rotate-45" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-dark">RouteOps</span>
+            <span className="text-xl font-bold tracking-tight text-dark">Routiqo</span>
           </div>
 
           {/* Desktop Links */}

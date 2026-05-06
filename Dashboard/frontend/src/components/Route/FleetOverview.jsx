@@ -65,45 +65,47 @@ export default function FleetOverview({ onToggleSequence, showSequence }) {
       </button>
       
       {showFleet && (
-        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-        {fleetStatus.map(({ vehicle, route }, idx) => {
-          const isSelected = route && activeRoute?.route_id === route.route_id
-          const color = ROUTE_COLORS[idx % ROUTE_COLORS.length]
-          const isAvailable = vehicle.is_available
-          
-          return (
-            <div key={`fleet-item-${vehicle.id}`} className="group relative">
-              <button
-                onClick={() => route && setActiveRouteBase(route)}
-                disabled={!route}
-                className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all border ${
-                  isSelected 
-                    ? 'bg-zinc-50 border-zinc-200 dark:bg-zinc-800/50 dark:border-zinc-700' 
-                    : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/30'
-                } ${!route ? 'opacity-60 grayscale-[0.5]' : ''}`}
-              >
-                <div 
-                  className={`w-3 h-3 rounded-full shrink-0 shadow-sm ${!route ? 'bg-zinc-300' : ''}`} 
-                  style={route ? { backgroundColor: color } : {}}
-                />
-                <div className="flex-1 text-left min-w-0">
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs font-bold truncate text-zinc-800 dark:text-zinc-200">
-                      {vehicle.name}
-                    </p>
-                    <p className="text-[10px] text-zinc-500 font-mono">
-                      {route ? formatKm(route.total_distance) : 'No active route'}
-                    </p>
-                  </div>
-                  <p className="text-[10px] text-zinc-500">
-                    {route ? `${route.stops?.length || 0} stops assigned` : (isAvailable ? 'Idle - Waiting for orders' : 'Busy - Maintenance/Other')}
-                  </p>
+        <div className="max-h-[115px] overflow-y-auto custom-scrollbar-visible pr-2">
+          <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            {fleetStatus.map(({ vehicle, route }, idx) => {
+              const isSelected = route && activeRoute?.route_id === route.route_id
+              const color = ROUTE_COLORS[idx % ROUTE_COLORS.length]
+              const isAvailable = vehicle.is_available
+              
+              return (
+                <div key={`fleet-item-${vehicle.id}`} className="group relative">
+                  <button
+                    onClick={() => route && setActiveRouteBase(route)}
+                    disabled={!route}
+                    className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all border ${
+                      isSelected 
+                        ? 'bg-zinc-50 border-zinc-200 dark:bg-zinc-800/50 dark:border-zinc-700' 
+                        : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/30'
+                    } ${!route ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                  >
+                    <div 
+                      className={`w-3 h-3 rounded-full shrink-0 shadow-sm ${!route ? 'bg-zinc-300' : ''}`} 
+                      style={route ? { backgroundColor: color } : {}}
+                    />
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs font-bold truncate text-zinc-800 dark:text-zinc-200">
+                          {vehicle.name}
+                        </p>
+                        <p className="text-[10px] text-zinc-500 font-mono">
+                          {route ? formatKm(route.total_distance) : 'No active route'}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-zinc-500">
+                        {route ? `${route.stops?.length || 0} stops assigned` : (isAvailable ? 'Idle - Waiting for orders' : 'Busy - Maintenance/Other')}
+                      </p>
+                    </div>
+                  </button>
                 </div>
-              </button>
-            </div>
-          )
-        })}
-      </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {activeRoute && (
@@ -113,7 +115,7 @@ export default function FleetOverview({ onToggleSequence, showSequence }) {
             className="w-full flex items-center justify-between group cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
+              <div className="w-1.5 h-4 bg-primary rounded-full" />
               <h4 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
                 Stop Sequence
               </h4>

@@ -1,6 +1,6 @@
-# RouteOps Landing Page
+# Routiqo Landing Page
 
-A premium, modern SaaS landing page for the RouteOps logistics platform.
+A premium, modern SaaS landing page for the Routiqo logistics platform.
 
 ## 🚀 Tech Stack
 - **React 19** (Vite)

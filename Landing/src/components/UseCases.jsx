@@ -33,7 +33,7 @@ const UseCases = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-4xl md:text-5xl font-bold text-dark mb-6">Designed for Every Industry</h2>
-            <p className="text-xl text-text-secondary">RouteOps is flexible enough to power logistics for any business size or type.</p>
+            <p className="text-xl text-text-secondary">Routiqo is flexible enough to power logistics for any business size or type.</p>
           </div>
           <button className="text-dark font-bold flex items-center gap-2 hover:gap-4 transition-all">
             Explore all use cases <ArrowRight size={20} />

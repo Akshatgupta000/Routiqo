@@ -65,7 +65,7 @@ class RouteService
             $this->clearPlannedRoutesInternal($center->id);
 
             // Auto-capture unassigned orders in the center's area before generating
-            $this->captureNearbyOrders($center);
+            $this->captureNearbyOrders($center, 10.0, $date);
 
             $batch = $this->processCenter($center, $departureAt, $date);
             $comparisons = array_merge($comparisons, $batch);
@@ -144,6 +144,8 @@ class RouteService
         Log::info('route.regenerate.start', ['delivery_center_id' => $deliveryCenterId]);
 
         $this->clearPlannedRoutesInternal($deliveryCenterId);
+
+        $this->captureNearbyOrders($center, 10.0, $date);
 
         return $this->generateRoutes($deliveryCenterId, $departureAt, $date);
     }
@@ -479,31 +481,28 @@ class RouteService
 
         return [];
     }
-    private function captureNearbyOrders(DeliveryCenter $center, float $radiusKm = 10.0): void
+    private function captureNearbyOrders(DeliveryCenter $center, float $radiusKm = 10.0, ?string $date = null): void
     {
         $zoneService = app(\App\Services\ServiceZoneService::class);
         $zone = \App\Models\ServiceZone::where('delivery_center_id', $center->id)->first();
 
-        // If no specific zone exists, we can't capture strictly.
-        if (!$zone) return;
+        // If no specific zone exists, we'll still proceed for orphaned orders (dist-based capture)
+        // But we won't be able to "steal" orders from other hubs without a Voronoi zone.
 
-        // Find all pending/assigned orders that are NOT already in this center
+        // Find all pending/assigned orders that are NOT already in this center (including orphans)
         $candidates = Order::query()
             ->whereIn('status', [OrderStatus::Pending, OrderStatus::Assigned])
-            ->where('delivery_center_id', '!=', $center->id)
+            ->whereNull('delivery_center_id')
             ->get();
 
         foreach ($candidates as $order) {
-            // Check if order is physically inside this center's Voronoi zone
-            if ($zoneService->isPointInPolygon((float)$order->latitude, (float)$order->longitude, $zone->polygon_coordinates)) {
-                
-                // Extra safety: must also be within the radius limit (10km)
-                $dist = \App\Helpers\DistanceHelper::kmBetween(
-                    (float)$order->latitude, (float)$order->longitude,
-                    (float)$center->latitude, (float)$center->longitude
-                );
-                if ($dist > $radiusKm) continue;
-                
+            $dist = \App\Helpers\DistanceHelper::kmBetween(
+                (float)$order->latitude, (float)$order->longitude,
+                (float)$center->latitude, (float)$center->longitude
+            );
+
+            // Orphans are fair game for any center within the capture radius
+            if ($dist <= $radiusKm) {
                 // Safety check: don't steal if it's already in an InProgress route
                 if ($order->status === OrderStatus::Assigned) {
                     $stop = $order->routeStop;
@@ -512,17 +511,17 @@ class RouteService
                     }
                 }
 
-                // Re-assign to this center
-                $this->orders->update($order, [
+                $updateData = [
                     'delivery_center_id' => $center->id,
                     'status' => OrderStatus::Pending,
                     'vehicle_id' => null,
-                ]);
+                ];
 
-                Log::info('order.captured.voronoi', [
-                    'order_id' => $order->id,
-                    'center_id' => $center->id
-                ]);
+                if ($date) {
+                    $updateData['delivery_date'] = $date;
+                }
+
+                $this->orders->update($order, $updateData);
             }
         }
     }

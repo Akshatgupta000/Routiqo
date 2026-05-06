@@ -190,4 +190,24 @@ class OrderController extends Controller
             'deleted_count' => $count
         ]);
     }
+
+    /**
+     * Mark all active orders as delivered.
+     * POST /api/orders/mark-all-delivered
+     */
+    public function markAllDelivered(): \Illuminate\Http\JsonResponse
+    {
+        $query = \App\Models\Order::whereIn('status', [
+            OrderStatus::Pending->value,
+            OrderStatus::Assigned->value,
+        ]);
+        
+        $count = $query->count();
+        $query->update(['status' => OrderStatus::Delivered->value]);
+
+        return response()->json([
+            'success' => true,
+            'updated_count' => $count
+        ]);
+    }
 }

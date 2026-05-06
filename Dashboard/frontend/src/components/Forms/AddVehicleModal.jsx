@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import Modal from '../UI/Modal'
 import Button from '../UI/Button'
-import * as api from '../../services/api'
+import { useApp } from '../../context/AppContext'
 
-export default function AddVehicleModal({ open, onClose, onCreated, centers, toast, initialCenterId }) {
+export default function AddVehicleModal({ open, onClose, centers, toast, initialCenterId }) {
+  const { addVehicleAction } = useApp()
   const [form, setForm] = useState({
     name: '',
     capacity: 6,
@@ -24,15 +25,13 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
     e.preventDefault()
     setSaving(true)
     try {
-      await api.createVehicle({
+      await addVehicleAction({
         name: form.name,
         capacity: Number(form.capacity),
         average_speed: Number(form.average_speed),
         is_available: form.is_available,
         delivery_center_id: form.delivery_center_id,
       })
-      toast('Vehicle created')
-      onCreated?.()
       onClose?.()
       setForm({
         name: '',
@@ -42,7 +41,7 @@ export default function AddVehicleModal({ open, onClose, onCreated, centers, toa
         delivery_center_id: centers[0]?.id || '',
       })
     } catch (err) {
-      toast(err?.response?.data?.message || 'Could not create vehicle', 'error')
+      // toast is handled in action
     } finally {
       setSaving(false)
     }

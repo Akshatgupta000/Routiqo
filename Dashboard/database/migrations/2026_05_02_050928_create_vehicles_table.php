@@ -14,7 +14,7 @@ return new class extends Migration
             $table->unsignedInteger('capacity');
             $table->decimal('average_speed', 8, 2)->default(30.00)->comment('Average speed km/h');
             $table->boolean('is_available')->default(true);
-            $table->foreignId('delivery_center_id')->constrained('delivery_centers')->cascadeOnDelete();
+            $table->foreignId('delivery_center_id')->nullable()->constrained('delivery_centers')->nullOnDelete();
             $table->timestamps();
         });
     }

@@ -5,12 +5,27 @@ import { useApp } from '../../context/AppContext'
 import * as api from '../../services/api'
 
 export default function CenterOrdersPanel({ centerId, isDrawerContent = false }) {
-  const { orders, vehicles, activeMultiRoutes, generateRoutesAction, isSimulating, startFleetSimulation, toast } = useApp()
+  const { centers, orders, vehicles, activeMultiRoutes, generateRoutesAction, isSimulating, startFleetSimulation, toast } = useApp()
   const [activeTab, setActiveTab] = useState('orders')
 
   const centerOrders = useMemo(() => {
     if (!centerId) return []
-    return orders.filter(o => String(o.delivery_center_id) === String(centerId))
+    const center = centers.find(c => String(c.id) === String(centerId))
+    
+    return orders.filter(o => {
+      const isAssigned = String(o.delivery_center_id) === String(centerId)
+      if (isAssigned) return true
+      
+      // Also show orphans in range
+      if (o.delivery_center_id === null && center) {
+        const dist = Math.sqrt(
+          Math.pow(Number(o.latitude) - Number(center.latitude), 2) + 
+          Math.pow(Number(o.longitude) - Number(center.longitude), 2)
+        )
+        return dist < 0.09 // ~10km (Strict)
+      }
+      return false
+    })
   }, [orders, centerId])
 
   const centerVehicles = useMemo(() => {
