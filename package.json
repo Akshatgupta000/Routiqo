@@ -1,0 +1,13 @@
+{
+  "name": "routiqo-workspace",
+  "version": "1.0.0",
+  "scripts": {
+    "dev:landing": "cd Landing && npm run dev",
+    "dev:dashboard": "cd dashboard/frontend && npm run dev",
+    "dev:backend": "cd dashboard && php artisan serve",
+    "dev": "npx concurrently \"npm run dev:landing\" \"npm run dev:dashboard\" \"npm run dev:backend\" --names \"LANDING,DASHBOARD,BACKEND\" --prefix-colors \"cyan,magenta,green\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

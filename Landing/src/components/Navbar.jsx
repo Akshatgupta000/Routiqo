@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 
-const Navbar = ({ openAuth }) => {
+const Navbar = ({ openSignup, openLogin }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -61,10 +61,16 @@ const Navbar = ({ openAuth }) => {
           </div>
 
           {/* CTA Button */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-3">
             <button 
-              onClick={openAuth}
-              className="btn-primary flex items-center gap-2 py-2 text-sm"
+              onClick={openLogin}
+              className="text-sm font-semibold text-dark hover:text-primary transition-colors px-4 py-2"
+            >
+              Log In
+            </button>
+            <button 
+              onClick={openSignup}
+              className="btn-primary flex items-center gap-2 py-2 text-sm px-5"
             >
               Get Started <ArrowRight size={16} />
             </button>
@@ -106,7 +112,16 @@ const Navbar = ({ openAuth }) => {
               <button 
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  openAuth();
+                  openLogin();
+                }}
+                className="text-dark font-semibold hover:text-primary transition-colors py-2"
+              >
+                Log In
+              </button>
+              <button 
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openSignup();
                 }}
                 className="btn-primary w-full flex items-center justify-center gap-2"
               >

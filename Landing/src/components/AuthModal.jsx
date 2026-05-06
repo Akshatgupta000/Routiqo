@@ -34,13 +34,38 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    console.log(`Submitting ${mode} form:`, formData);
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    onClose();
+    try {
+      const endpoint = mode === 'signup' ? '/register' : '/login';
+      const response = await fetch(`http://localhost:8000/api${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      // Store token and user info (local to landing)
+      localStorage.setItem('auth_token', data.data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.data.user));
+
+      setIsLoading(false);
+      onClose();
+
+      // Redirect to dashboard with token in URL (cross-origin fix for dev)
+      const userData = encodeURIComponent(JSON.stringify(data.data.user));
+      window.location.href = `http://localhost:5174?token=${data.data.access_token}&user=${userData}`;
+    } catch (error) {
+      console.error('Auth error:', error);
+      alert(error.message);
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e) => {

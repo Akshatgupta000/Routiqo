@@ -8,11 +8,15 @@ use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use App\Models\Traits\BelongsToUser;
+
 class DeliveryRoute extends Model
 {
+    use BelongsToUser;
     protected $table = 'routes';
 
     protected $fillable = [
+        'user_id',
         'delivery_center_id',
         'vehicle_id',
         'comparison_batch_id',

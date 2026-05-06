@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use App\Models\Traits\BelongsToUser;
+
 class Vehicle extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToUser;
     protected $fillable = [
+        'user_id',
         'name',
         'vehicle_number',
         'capacity',

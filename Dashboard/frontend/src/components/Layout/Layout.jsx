@@ -1,10 +1,34 @@
-import { Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar/Sidebar'
 import ToastContainer from '../UI/ToastContainer'
 import { useApp } from '../../context/AppContext'
 
 export default function Layout() {
   const { toasts, dismissToast, bootstrapError } = useApp()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tokenParam = params.get('token')
+    const userParam = params.get('user')
+
+    if (tokenParam) {
+      localStorage.setItem('auth_token', tokenParam)
+      if (userParam) {
+        localStorage.setItem('user', decodeURIComponent(userParam))
+      }
+      // Clear the URL parameters and reload to ensure a fresh AppContext state
+      window.history.replaceState({}, document.title, window.location.pathname)
+      window.location.reload()
+      return
+    }
+
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      window.location.href = 'http://localhost:5173'
+    }
+  }, [])
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-zinc-100 text-zinc-900 sm:flex-row dark:bg-zinc-950 dark:text-zinc-100">

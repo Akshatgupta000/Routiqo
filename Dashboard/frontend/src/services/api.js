@@ -10,19 +10,37 @@ const client = axios.create({
   timeout: 60000,
 })
 
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 client.interceptors.response.use(
   (response) => {
+    // Handle Rupee Roast style { success: true, data: ... }
+    if (response.data && response.data.success === true && response.data.data !== undefined) {
+      if (import.meta.env.DEV) {
+        console.debug('[API OK]', response.config.method?.toUpperCase(), response.config.url, response.data.data)
+      }
+      return { ...response, data: response.data.data }
+    }
+
     if (import.meta.env.DEV) {
       console.debug('[API OK]', response.config.method?.toUpperCase(), response.config.url, response.data)
     }
     return response
   },
   (error) => {
+    // Handle Rupee Roast style { success: false, message: ... }
     const msg =
       error?.response?.data?.message ||
       error?.response?.data?.errors ||
       error.message ||
       'Request failed'
+    
     if (import.meta.env.DEV) {
       console.error('[API ERR]', error?.response?.status, error?.config?.url, msg)
     }

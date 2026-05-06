@@ -260,6 +260,39 @@ export default function Sidebar() {
           </div>
         </div>
       </Modal>
+
+      {/* User Profile & Logout */}
+      <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
+                {JSON.parse(localStorage.getItem('user') || '{}')?.name?.charAt(0).toUpperCase() || 'U'}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold text-zinc-900 dark:text-white truncate">
+                {JSON.parse(localStorage.getItem('user') || '{}')?.name || 'User'}
+              </p>
+              <p className="text-[9px] text-zinc-500 truncate">
+                {JSON.parse(localStorage.getItem('user') || '{}')?.email || ''}
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              localStorage.clear()
+              window.location.href = 'http://localhost:5173'
+            }}
+            className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all"
+            title="Logout"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -6,10 +6,13 @@ use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use App\Models\Traits\BelongsToUser;
+
 class DeliveryCenter extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToUser;
     protected $fillable = [
+        'user_id',
         'name',
         'latitude',
         'longitude',
