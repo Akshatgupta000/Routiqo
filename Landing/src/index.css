@@ -47,3 +47,22 @@
     @apply text-dark/70 hover:text-dark font-medium transition-colors;
   }
 }
+
+/* Fix text cursor showing up on interactive elements */
+button, 
+a, 
+select, 
+[role="button"],
+label {
+  cursor: pointer;
+}
+
+button *, a *, [role="button"] * {
+  cursor: inherit;
+}
+
+input:disabled, 
+button:disabled,
+select:disabled {
+  cursor: not-allowed !important;
+}
