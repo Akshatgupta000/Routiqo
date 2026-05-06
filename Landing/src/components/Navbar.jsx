@@ -2,33 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ openAuth }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navLinks = [
-    { name: 'Home', href: '#home' },
+    { name: 'Home', href: '#' },
     { name: 'Features', href: '#features' },
     { name: 'Use Cases', href: '#use-cases' },
-    { name: 'Pricing', href: '#pricing' },
   ];
+
+  const handleLinkClick = (e, href) => {
+    if (href === '#') {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <nav 
       className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'py-2' : 'py-6'
+        isScrolled ? 'py-1' : 'py-4'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`bg-white/80 backdrop-blur-md rounded-full border border-white/20 shadow-lg px-6 py-3 flex items-center justify-between transition-all duration-300 ${
+        <div className={`bg-white/80 backdrop-blur-md rounded-full border border-white/20 shadow-lg px-5 py-2.5 flex items-center justify-between transition-all duration-300 ${
           isScrolled ? 'mx-0 shadow-xl' : 'mx-4'
         }`}>
           {/* Logo */}
@@ -45,6 +52,7 @@ const Navbar = () => {
               <a 
                 key={link.name} 
                 href={link.href} 
+                onClick={(e) => handleLinkClick(e, link.href)}
                 className="nav-link text-sm"
               >
                 {link.name}
@@ -54,7 +62,10 @@ const Navbar = () => {
 
           {/* CTA Button */}
           <div className="hidden md:block">
-            <button className="btn-primary flex items-center gap-2 py-2 text-sm">
+            <button 
+              onClick={openAuth}
+              className="btn-primary flex items-center gap-2 py-2 text-sm"
+            >
               Get Started <ArrowRight size={16} />
             </button>
           </div>
@@ -85,14 +96,20 @@ const Navbar = () => {
                 <a 
                   key={link.name} 
                   href={link.href} 
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(e) => handleLinkClick(e, link.href)}
                   className="text-lg font-medium text-dark hover:text-primary transition-colors"
                 >
                   {link.name}
                 </a>
               ))}
               <hr className="border-gray-100 my-2" />
-              <button className="btn-primary w-full flex items-center justify-center gap-2">
+              <button 
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openAuth();
+                }}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
                 Get Started <ArrowRight size={18} />
               </button>
             </div>

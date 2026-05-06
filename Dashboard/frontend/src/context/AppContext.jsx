@@ -10,6 +10,7 @@ import {
 import * as api from '../services/api'
 import { computeVehiclePosition } from '../utils/routeMap'
 import { buildPlaybackPathForRoute, buildLegPath } from '../utils/simplePlaybackPath'
+import { getLocalDateString } from '../utils/format'
 import { Delaunay } from 'd3-delaunay'
 
 export const AppContext = createContext(null)
@@ -89,7 +90,7 @@ function normalizeRouteForSimulation(route) {
 }
 
 function getTodayString() {
-  return new Date().toISOString().split('T')[0]
+  return getLocalDateString()
 }
 
 export function AppProvider({ children }) {

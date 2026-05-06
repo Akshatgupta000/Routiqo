@@ -5,6 +5,7 @@ import Button from '../UI/Button'
 import CalendarPicker from '../UI/CalendarPicker'
 import * as api from '../../services/api'
 import { PRIORITIES } from '../../utils/constants'
+import { getLocalDateString } from '../../utils/format'
 import AddressAutocomplete from '../UI/AddressAutocomplete'
 
 function formatDateDisplay(dateStr) {
@@ -15,7 +16,7 @@ function formatDateDisplay(dateStr) {
 
 export default function AddOrderModal({ open, onClose, toast }) {
   const { addOrderAction } = useApp()
-  const today = new Date().toISOString().split('T')[0]
+  const today = getLocalDateString()
   const [form, setForm] = useState({
     address: '',
     delivery_date: today,

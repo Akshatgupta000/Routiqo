@@ -28,15 +28,15 @@ const UseCases = () => {
   ];
 
   return (
-    <section id="use-cases" className="py-24 px-4 bg-white">
+    <section id="use-cases" className="py-20 px-4 bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="max-w-2xl">
-            <h2 className="text-4xl md:text-5xl font-bold text-dark mb-6">Designed for Every Industry</h2>
-            <p className="text-xl text-text-secondary">Routiqo is flexible enough to power logistics for any business size or type.</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-dark mb-4">Designed for Every Industry</h2>
+            <p className="text-lg text-text-secondary">Routiqo is flexible enough to power logistics for any business size or type.</p>
           </div>
-          <button className="text-dark font-bold flex items-center gap-2 hover:gap-4 transition-all">
-            Explore all use cases <ArrowRight size={20} />
+          <button className="text-dark font-bold flex items-center gap-2 hover:gap-4 transition-all text-sm">
+            Explore all use cases <ArrowRight size={18} />
           </button>
         </div>
 
@@ -48,17 +48,17 @@ const UseCases = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="group bg-white border border-gray-100 p-8 rounded-3xl hover:shadow-2xl hover:border-transparent transition-all duration-500"
+              className="group bg-white border border-gray-100 p-6 rounded-3xl hover:shadow-2xl hover:border-transparent transition-all duration-500"
             >
-              <div className={`w-20 h-20 ${c.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300`}>
-                {c.icon}
+              <div className={`w-16 h-16 ${c.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                <div className="scale-90">{c.icon}</div>
               </div>
-              <h3 className="text-2xl font-bold text-dark mb-4">{c.title}</h3>
-              <p className="text-text-secondary text-lg mb-8 leading-relaxed">{c.desc}</p>
+              <h3 className="text-xl font-bold text-dark mb-3">{c.title}</h3>
+              <p className="text-text-secondary text-base mb-6 leading-relaxed">{c.desc}</p>
               
-              <div className="pt-6 border-t border-gray-50">
-                <span className="text-xs uppercase tracking-widest font-bold text-text-secondary block mb-2">Success Metric</span>
-                <span className="text-2xl font-bold text-primary bg-dark px-4 py-2 rounded-xl inline-block">{c.metric}</span>
+              <div className="pt-4 border-t border-gray-50">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-text-secondary block mb-2">Success Metric</span>
+                <span className="text-xl font-bold text-primary bg-dark px-3 py-1.5 rounded-lg inline-block">{c.metric}</span>
               </div>
             </motion.div>
           ))}

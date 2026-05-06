@@ -1,31 +1,37 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
-import TrustedBy from '../components/TrustedBy';
 import Features from '../components/Features';
 import HowItWorks from '../components/HowItWorks';
 import UseCases from '../components/UseCases';
-import CTA from '../components/CTA';
 import Footer from '../components/Footer';
+import AuthModal from '../components/AuthModal';
+import useAuthModal from '../hooks/useAuthModal';
 
 const Landing = () => {
+  const { isOpen, mode, openModal, closeModal } = useAuthModal();
+
   return (
-    <div className="min-h-screen bg-[#F5F5F5] p-0 md:p-4 lg:p-6">
+    <div className="min-h-screen bg-[#F5F5F5] p-0 md:p-3 lg:p-4">
       {/* Main Container Card */}
-      <div className="mx-auto max-w-[1600px] bg-white rounded-none md:rounded-[3rem] shadow-2xl overflow-hidden relative border border-white/50">
-        <Navbar />
+      <div className="mx-auto max-w-[1440px] bg-white rounded-none md:rounded-[2.5rem] shadow-2xl overflow-visible relative border border-white/50">
+        <Navbar openAuth={() => openModal('signup')} />
         
         <main>
-          <Hero />
-          <TrustedBy />
+          <Hero openAuth={() => openModal('signup')} />
           <Features />
           <HowItWorks />
           <UseCases />
-          <CTA />
         </main>
         
         <Footer />
       </div>
+
+      <AuthModal 
+        isOpen={isOpen} 
+        onClose={closeModal} 
+        initialMode={mode} 
+      />
     </div>
   );
 };

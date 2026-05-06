@@ -20,6 +20,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
   }
   body {
     background-color: var(--color-bg-soft);
@@ -35,11 +36,11 @@
   }
   
   .btn-primary {
-    @apply bg-primary text-dark font-bold px-8 py-4 rounded-full shadow-[var(--shadow-neon)] hover:shadow-[0_0_30px_rgba(163,255,63,0.5)] transition-all duration-300 active:scale-95;
+    @apply bg-primary text-dark font-bold px-6 py-3 rounded-full shadow-[var(--shadow-neon)] hover:shadow-[0_0_30px_rgba(163,255,63,0.5)] transition-all duration-300 active:scale-95;
   }
   
   .btn-secondary {
-    @apply bg-dark text-white font-bold px-8 py-4 rounded-full hover:bg-gray-800 shadow-premium transition-all duration-300 active:scale-95;
+    @apply bg-dark text-white font-bold px-6 py-3 rounded-full hover:bg-gray-800 shadow-premium transition-all duration-300 active:scale-95;
   }
   
   .nav-link {

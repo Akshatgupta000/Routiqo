@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, ArrowRight, MapPin, Truck, Zap } from 'lucide-react';
+import { ArrowRight, MapPin, Truck, Zap } from 'lucide-react';
 
-const Hero = () => {
+const Hero = ({ openAuth }) => {
   return (
-    <section id="home" className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+    <section id="home" className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-12">
         
         {/* Left Content */}
         <div className="flex-1 text-center lg:text-left">
@@ -14,50 +14,49 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-dark font-semibold text-sm mb-6 border border-primary/20">
+            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-dark font-semibold text-xs mb-4 border border-primary/20">
               New: AI-Powered Dispatching v4.0
             </span>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-dark leading-[1.1] mb-6">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark leading-[1.1] mb-5">
               Optimize Your Fleet. <br />
-              <span className="text-primary bg-dark px-4 py-1 rounded-2xl inline-block mt-2">Deliver Smarter.</span>
+              <span className="text-primary bg-dark px-3 py-1 rounded-xl inline-block mt-2">Deliver Smarter.</span>
             </h1>
-            <p className="text-xl text-text-secondary max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed">
+            <p className="text-base text-text-secondary max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
               Routiqo helps logistics teams automate dispatching, optimize delivery routes, and track fleet operations in real-time. Efficiency at every mile.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-              <button className="btn-primary flex items-center gap-2 group w-full sm:w-auto justify-center">
-                Get Started Free 
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="btn-secondary flex items-center gap-2 w-full sm:w-auto justify-center">
-                <Play size={18} fill="currentColor" />
-                View Demo
+              <button 
+                onClick={openAuth}
+                className="btn-primary px-6 py-3 text-sm flex items-center gap-2 group w-full sm:w-auto justify-center"
+              >
+                Get Started 
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
             
-            <div className="mt-12 flex items-center justify-center lg:justify-start gap-8 grayscale opacity-50">
+            <div className="mt-10 flex items-center justify-center lg:justify-start gap-6 grayscale opacity-40">
               <div className="flex items-center gap-2">
-                <Zap size={16} />
-                <span className="text-sm font-medium">99.9% Uptime</span>
+                <Zap size={14} />
+                <span className="text-xs font-medium">99.9% Uptime</span>
               </div>
               <div className="flex items-center gap-2">
-                <Zap size={16} />
-                <span className="text-sm font-medium">Enterprise Security</span>
+                <Zap size={14} />
+                <span className="text-xs font-medium">Enterprise Security</span>
               </div>
             </div>
           </motion.div>
         </div>
 
         {/* Right Content - Illustration */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative flex justify-center lg:justify-end">
           <motion.div
             initial={{ opacity: 0, scale: 0.9, rotate: 2 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative z-10"
+            className="relative z-10 w-full max-w-[500px]"
           >
-            <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+            <div className="rounded-2xl overflow-hidden shadow-2xl border-2 border-white">
               <img 
                 src="/hero.png" 
                 alt="Routiqo Platform Illustration" 
@@ -65,34 +64,33 @@ const Hero = () => {
               />
             </div>
             
-            {/* Floating UI Elements */}
             <motion.div 
               animate={{ y: [0, -15, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -top-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 hidden md:flex items-center gap-3"
+              className="absolute -top-4 -left-4 bg-white p-3 rounded-xl shadow-xl border border-gray-100 hidden md:flex items-center gap-2.5"
             >
-              <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary">
-                <Truck size={20} />
+              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+                <Truck size={16} />
               </div>
               <div>
-                <p className="text-[10px] text-text-secondary uppercase tracking-wider font-bold">Active Fleet</p>
-                <p className="text-lg font-bold text-dark">128 Trucks</p>
+                <p className="text-[8px] text-text-secondary uppercase tracking-wider font-bold">Active Fleet</p>
+                <p className="text-base font-bold text-dark">128 Trucks</p>
               </div>
             </motion.div>
 
             <motion.div 
               animate={{ y: [0, 15, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -bottom-10 -right-6 bg-dark text-white p-5 rounded-2xl shadow-2xl hidden md:block"
+              className="absolute -bottom-6 -right-4 bg-dark text-white p-4 rounded-xl shadow-2xl hidden md:block"
             >
-              <div className="flex items-center gap-4 mb-3">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-dark">
-                  <MapPin size={16} />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center text-dark">
+                  <MapPin size={14} />
                 </div>
-                <span className="font-semibold">Live Tracking</span>
+                <span className="text-sm font-semibold">Live Tracking</span>
               </div>
-              <div className="space-y-2">
-                <div className="w-32 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+              <div className="space-y-1.5">
+                <div className="w-24 h-1 bg-gray-700 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: "75%" }}
@@ -100,7 +98,7 @@ const Hero = () => {
                     className="h-full bg-primary" 
                   />
                 </div>
-                <div className="w-24 h-1.5 bg-gray-700 rounded-full" />
+                <div className="w-16 h-1 bg-gray-700 rounded-full" />
               </div>
             </motion.div>
           </motion.div>

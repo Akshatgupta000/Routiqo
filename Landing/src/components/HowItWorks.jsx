@@ -22,11 +22,11 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section className="py-24 px-4 bg-white">
+    <section className="py-20 px-4 bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl font-bold text-dark mb-4">How It Works</h2>
-          <p className="text-text-secondary text-lg">Streamline your entire delivery process in three simple steps.</p>
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-dark mb-4">How It Works</h2>
+          <p className="text-text-secondary text-base">Streamline your entire delivery process in three simple steps.</p>
         </div>
 
         <div className="relative">
@@ -41,16 +41,16 @@ const HowItWorks = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.2 }}
-                className="flex flex-col items-center text-center bg-white p-8 rounded-3xl"
+                className="flex flex-col items-center text-center bg-white p-6 rounded-3xl"
               >
-                <div className="w-16 h-16 bg-dark text-primary rounded-2xl flex items-center justify-center mb-8 shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300">
+                <div className="w-14 h-14 bg-dark text-primary rounded-2xl flex items-center justify-center mb-6 shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300">
                   {step.icon}
                 </div>
-                <div className="w-8 h-8 rounded-full bg-primary text-dark font-bold text-sm flex items-center justify-center mb-4 border-4 border-white shadow-lg">
+                <div className="w-7 h-7 rounded-full bg-primary text-dark font-bold text-xs flex items-center justify-center mb-4 border-4 border-white shadow-lg">
                   {index + 1}
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-dark">{step.title}</h3>
-                <p className="text-text-secondary leading-relaxed max-w-xs">{step.desc}</p>
+                <h3 className="text-xl font-bold mb-3 text-dark">{step.title}</h3>
+                <p className="text-text-secondary text-sm leading-relaxed max-w-xs">{step.desc}</p>
               </motion.div>
             ))}
           </div>
