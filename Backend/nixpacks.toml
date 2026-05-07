@@ -16,12 +16,12 @@ nixPkgs = [
 
 [phases.install]
 dependsOn = ["setup"]
-cmds = ["composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev"]
+cmds = ["composer install --ignore-platform-req=ext-mongodb --no-interaction --prefer-dist --optimize-autoloader --no-dev"]
 
 [phases.build]
 dependsOn = ["install"]
 cmds = [
-    "composer install --no-dev --optimize-autoloader",
+    "composer install --ignore-platform-req=ext-mongodb --no-dev --optimize-autoloader",
     "CACHE_STORE=file DB_CONNECTION=sqlite php artisan optimize:clear",
     "CACHE_STORE=file DB_CONNECTION=sqlite php artisan config:cache",
     "CACHE_STORE=file DB_CONNECTION=sqlite php artisan route:cache"
