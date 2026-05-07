@@ -21,9 +21,10 @@ cmds = ["composer install --no-interaction --prefer-dist --optimize-autoloader -
 [phases.build]
 dependsOn = ["install"]
 cmds = [
-    "php artisan optimize:clear",
-    "php artisan config:cache",
-    "php artisan route:cache"
+    "composer install --no-dev --optimize-autoloader",
+    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan optimize:clear",
+    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan config:cache",
+    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan route:cache"
 ]
 
 [start]
