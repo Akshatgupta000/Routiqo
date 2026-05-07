@@ -15,14 +15,27 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
-            if ($request->is('api/*')) {
-                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage() ?: 'An unexpected error occurred',
-                ], $statusCode);
-            }
-        });
+
+    $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+    });
+
+    $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+        if ($request->is('api/*')) {
+            $statusCode = method_exists($e, 'getStatusCode')
+                ? $e->getStatusCode()
+                : 500;
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'An unexpected error occurred',
+            ], $statusCode);
+        }
+    });
+
     })->create();
