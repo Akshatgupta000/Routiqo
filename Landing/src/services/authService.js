@@ -1,22 +1,44 @@
 const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/auth`;
 
+console.log('[Auth] API_URL initialized as:', API_URL);
+
 const authService = {
   login: async (email, password) => {
-    const response = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    return response.json();
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Login failed with status ${response.status}`);
+      }
+      return response.json();
+    } catch (err) {
+      console.error('[Auth] Login error:', err);
+      throw err;
+    }
   },
 
   register: async (name, email, password) => {
-    const response = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
-    return response.json();
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, email, password }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Registration failed with status ${response.status}`);
+      }
+      return response.json();
+    } catch (err) {
+      console.error('[Auth] Registration error:', err);
+      throw err;
+    }
   },
 
   forgotPassword: async (email) => {

@@ -49,7 +49,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }) => {
       window.location.href = `${dashboardUrl}?token=${data.data.access_token}&user=${userData}`;
     } catch (error) {
       console.error('Auth error:', error);
-      alert(error.message);
+      let msg = error.message;
+      if (msg === 'Failed to fetch') {
+        msg = 'Connection Failed: Could not reach the API server. Please ensure VITE_API_URL is correctly set in Vercel and the backend is running.';
+      }
+      alert(msg);
       setIsLoading(false);
     }
   };
