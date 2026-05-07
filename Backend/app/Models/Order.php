@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\OrderPriority;
 use App\Enums\OrderStatus;
-use Illuminate\Database\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;

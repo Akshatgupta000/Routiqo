@@ -4,8 +4,8 @@ providers = ["php"]
 nixPkgs = [
     "php82",
     "php82Packages.composer",
+    "php82Extensions.mongodb",
     "php82Extensions.pdo",
-    "php82Extensions.pdo_sqlite",
     "php82Extensions.mbstring",
     "php82Extensions.xml",
     "php82Extensions.curl",
@@ -17,17 +17,15 @@ nixPkgs = [
 [phases.install]
 dependsOn = ["setup"]
 cmds = [
-    "composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev"
+    "composer install --ignore-platform-req=ext-mongodb --no-interaction --prefer-dist --optimize-autoloader --no-dev"
 ]
 
 [phases.build]
 dependsOn = ["install"]
 cmds = [
-    "mkdir -p database && touch database/database.sqlite",
-    "php artisan optimize:clear",
-    "php artisan config:cache",
-    "php artisan route:cache",
-    "php artisan view:cache"
+    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan optimize:clear",
+    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan config:cache",
+    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan route:cache"
 ]
 
 [start]

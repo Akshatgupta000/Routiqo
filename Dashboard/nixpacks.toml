@@ -1,11 +1,25 @@
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = [
+  "php82",
+  "php82Packages.composer",
+  "php82Extensions.pdo",
+  "php82Extensions.mbstring",
+  "php82Extensions.xml",
+  "php82Extensions.curl",
+  "php82Extensions.zip",
+  "php82Extensions.dom",
+  "php82Extensions.fileinfo"
+]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = [
+  "composer install --no-dev --optimize-autoloader"
+]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "php -m | grep mongodb || true"
+]
 
 [start]
-cmd = "npm run preview -- --host 0.0.0.0 --port=$PORT"
+cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"

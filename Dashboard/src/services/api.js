@@ -24,18 +24,21 @@ client.interceptors.request.use((config) => {
 
 client.interceptors.response.use(
   (response) => {
-    // Handle Laravel response style { success: true, data: ... }
+    // Handle Rupee Roast style { success: true, data: ... }
     if (response.data && response.data.success === true && response.data.data !== undefined) {
+      if (import.meta.env.DEV) {
+        console.debug('[API OK]', response.config.method?.toUpperCase(), response.config.url, response.data.data)
+      }
       return { ...response, data: response.data.data }
+    }
+
+    if (import.meta.env.DEV) {
+      console.debug('[API OK]', response.config.method?.toUpperCase(), response.config.url, response.data)
     }
     return response
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('auth_token')
-      // Optional: window.location.href = '/login' if not already there
-    }
-    
+    // Handle Rupee Roast style { success: false, message: ... }
     const msg =
       error?.response?.data?.message ||
       error?.response?.data?.errors ||
