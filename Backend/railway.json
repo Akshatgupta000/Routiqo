@@ -5,7 +5,8 @@
   },
   "deploy": {
     "startCommand": null,
-    "healthcheckPath": "/api/centers",
-    "healthcheckTimeout": 100
+    "healthcheckPath": "/up",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE"
   }
 }
