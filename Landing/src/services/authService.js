@@ -1,21 +1,16 @@
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/auth`;
-
-console.log('[Auth] API_URL initialized as:', API_URL);
+import api from './api';
 
 const authService = {
   login: async (email, password) => {
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Login failed with status ${response.status}`);
+      const response = await api.post('/auth/login', { email, password });
+      
+      // Store token if present
+      if (response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
       }
-      return response.json();
+      
+      return response.data;
     } catch (err) {
       console.error('[Auth] Login error:', err);
       throw err;
@@ -24,17 +19,14 @@ const authService = {
 
   register: async (name, email, password) => {
     try {
-      const response = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name, email, password }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Registration failed with status ${response.status}`);
+      const response = await api.post('/auth/register', { name, email, password });
+      
+      // Store token if present
+      if (response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
       }
-      return response.json();
+      
+      return response.data;
     } catch (err) {
       console.error('[Auth] Registration error:', err);
       throw err;
@@ -42,31 +34,37 @@ const authService = {
   },
 
   forgotPassword: async (email) => {
-    const response = await fetch(`${API_URL}/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    return response.json();
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
   },
 
   verifyOtp: async (email, otp) => {
-    const response = await fetch(`${API_URL}/verify-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp }),
-    });
-    return response.json();
+    const response = await api.post('/auth/verify-otp', { email, otp });
+    return response.data;
   },
 
   resetPassword: async (email, otp, password, password_confirmation) => {
-    const response = await fetch(`${API_URL}/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp, password, password_confirmation }),
+    const response = await api.post('/auth/reset-password', { 
+      email, 
+      otp, 
+      password, 
+      password_confirmation 
     });
-    return response.json();
+    return response.data;
   },
+
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('auth_token');
+    }
+  },
+
+  getCurrentUser: async () => {
+    const response = await api.get('/auth/user');
+    return response.data;
+  }
 };
 
 export default authService;
