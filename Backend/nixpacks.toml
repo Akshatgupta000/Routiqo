@@ -1,4 +1,4 @@
-providers = ["php"]
+providers = ["php", "node"]
 
 [phases.setup]
 nixPkgs = [
@@ -11,17 +11,21 @@ nixPkgs = [
     "php82Extensions.curl",
     "php82Extensions.zip",
     "php82Extensions.dom",
-    "php82Extensions.fileinfo"
+    "php82Extensions.fileinfo",
+    "nodejs_20"
 ]
 
 [phases.install]
 dependsOn = ["setup"]
-cmds = ["composer install --ignore-platform-req=ext-mongodb --no-interaction --prefer-dist --optimize-autoloader --no-dev"]
+cmds = [
+    "composer install --ignore-platform-req=ext-mongodb --no-interaction --prefer-dist --optimize-autoloader --no-dev",
+    "npm install"
+]
 
 [phases.build]
 dependsOn = ["install"]
 cmds = [
-    "composer install --ignore-platform-req=ext-mongodb --no-dev --optimize-autoloader",
+    "npm run build",
     "CACHE_STORE=file DB_CONNECTION=sqlite php artisan optimize:clear",
     "CACHE_STORE=file DB_CONNECTION=sqlite php artisan config:cache",
     "CACHE_STORE=file DB_CONNECTION=sqlite php artisan route:cache"
