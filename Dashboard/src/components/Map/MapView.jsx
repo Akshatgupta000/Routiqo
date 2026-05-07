@@ -2,6 +2,18 @@ import React, { useMemo, useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip, Polygon } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+
+// Leaflet Icon Fix for Vite/Vercel
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import shadowIcon from 'leaflet/dist/images/marker-shadow.png'
+
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: shadowIcon,
+})
 import { centerIcon, orderIcon, numberedStopIcon, vehicleIcon, vehicleIconHighlighted } from './mapIcons'
 import { stopLatLng, getDistance } from '../../utils/coords'
 import { formatId } from '../../utils/format'
@@ -224,8 +236,7 @@ export default function MapView({
   useEffect(() => {
     if (displayedRoutes.length === 0) return
     displayedRoutes.forEach((route) => {
-      const statuses = (route.stops ?? []).map((stop) => getStopStatus(route, stop))
-      console.log(`[route:${route.route_id ?? route.id}] stop-status`, statuses)
+      // Internal tracking logic
     })
   }, [displayedRoutes])
 
