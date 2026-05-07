@@ -6,7 +6,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', '*')),
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'https://your-project-name.vercel.app', // Add your actual Vercel URL here
+        env('CORS_ALLOWED_ORIGINS', '*'),
+    ],
 
     'allowed_origins_patterns' => [],
 

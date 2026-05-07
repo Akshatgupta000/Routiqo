@@ -1,8 +1,10 @@
 import axios from 'axios'
-import { API_BASE } from '../utils/constants'
+
+// This looks for the Vercel variable first; if missing, it falls back to local for dev
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || API_BASE,
+  baseURL: API_BASE_URL,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
