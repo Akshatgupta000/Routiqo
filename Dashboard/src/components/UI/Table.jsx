@@ -8,35 +8,47 @@ export default function Table({ columns, rows, empty }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-      <table className="min-w-full divide-y divide-zinc-200 text-left text-sm dark:divide-zinc-800">
-        <thead className="bg-zinc-50 dark:bg-zinc-900/80">
-          <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className="whitespace-nowrap px-4 py-3 font-semibold text-zinc-600 dark:text-zinc-300"
-              >
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-100 bg-white dark:divide-zinc-800 dark:bg-zinc-950">
-          {rows.map((row, i) => (
-            <tr
-              key={row.id ?? i}
-              className="transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-900/50"
-            >
+    <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left text-sm md:table block">
+          <thead className="bg-zinc-50/50 dark:bg-zinc-900/50 md:table-header-group hidden">
+            <tr>
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-zinc-800 dark:text-zinc-200">
-                  {col.render ? col.render(row) : row[col.key]}
-                </td>
+                <th
+                  key={col.key}
+                  className="whitespace-nowrap px-6 py-4 font-black uppercase tracking-widest text-[10px] text-zinc-500"
+                >
+                  {col.label}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 md:table-row-group block">
+            {rows.map((row, i) => (
+              <tr
+                key={row.id ?? i}
+                className="transition-all hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 md:table-row block group"
+              >
+                {columns.map((col) => (
+                  <td 
+                    key={col.key} 
+                    className="px-6 py-4 md:table-cell block relative"
+                  >
+                    <div className="flex md:flex-col items-center justify-between md:items-start gap-2">
+                      <span className="md:hidden text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                        {col.label}
+                      </span>
+                      <div className="text-zinc-900 dark:text-white font-medium">
+                        {col.render ? col.render(row) : row[col.key]}
+                      </div>
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

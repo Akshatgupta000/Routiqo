@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
+import { Menu, X } from 'lucide-react'
 import Sidebar from '../Sidebar/Sidebar'
 import ToastContainer from '../UI/ToastContainer'
 import { useApp } from '../../context/AppContext'
 
 export default function Layout() {
   const { toasts, dismissToast, bootstrapError } = useApp()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -18,7 +20,6 @@ export default function Layout() {
       if (userParam) {
         localStorage.setItem('user', decodeURIComponent(userParam))
       }
-      // Clear the URL parameters and reload to ensure a fresh AppContext state
       window.history.replaceState({}, document.title, window.location.pathname)
       window.location.reload()
       return
@@ -31,9 +32,46 @@ export default function Layout() {
   }, [])
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-zinc-100 text-zinc-900 sm:flex-row dark:bg-zinc-950 dark:text-zinc-100">
-      <aside className="flex max-h-[38vh] w-full shrink-0 flex-col overflow-y-auto border-b border-zinc-200/90 bg-zinc-50/95 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950 sm:max-h-none sm:h-full sm:w-72 sm:max-w-[280px] sm:border-b-0 sm:border-r">
-        <Sidebar />
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-zinc-100 text-zinc-900 md:flex-row dark:bg-zinc-950 dark:text-zinc-100">
+      {/* Mobile Header */}
+      <header className="flex h-16 w-full shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
+            <span className="text-xs font-black text-white dark:text-zinc-900">R</span>
+          </div>
+          <h1 className="text-lg font-bold tracking-tight">Routiqo</h1>
+        </div>
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+      </header>
+
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-zinc-900/50 backdrop-blur-sm transition-opacity md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Drawer on Mobile, Compact on Tablet, Full on Desktop */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-zinc-200 bg-zinc-50/95 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:border-zinc-200/90 dark:border-zinc-800 dark:bg-zinc-950/95 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:w-20 lg:w-72`}
+      >
+        <div className="absolute right-4 top-4 md:hidden">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        <Sidebar onClose={() => setSidebarOpen(false)} isCollapsed={true} />
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

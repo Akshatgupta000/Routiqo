@@ -268,89 +268,98 @@ export default function Orders() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-auto p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex h-full flex-col overflow-auto p-4 lg:p-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
             Orders
           </h1>
-          <p className="text-sm text-zinc-500">Create and track delivery requests.</p>
+          <p className="text-sm font-medium text-zinc-500">Create and track delivery requests.</p>
         </div>
-        <Button onClick={() => setModal(true)}>Add order</Button>
+        <Button onClick={() => setModal(true)} className="w-full sm:w-auto shadow-lg">
+          Add new order
+        </Button>
       </div>
 
-      <Card className="mb-4">
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Delivery Hub</label>
-            <div className="relative mt-1.5 min-w-[200px]">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+      <Card className="mb-6 p-4 lg:p-6 bg-white/50 backdrop-blur-sm dark:bg-zinc-900/50 border-zinc-200/60 dark:border-zinc-800/60">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:flex lg:items-end lg:gap-6">
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Delivery Hub</label>
+              <div className="relative min-w-[220px]">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <select
+                  className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-3 text-sm font-bold text-zinc-900 transition-all hover:border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  value={orderFilters.hub}
+                  onChange={(e) => setOrderFilters(prev => ({ ...prev, hub: e.target.value }))}
+                >
+                  <option value="">All Delivery Hubs</option>
+                  {centers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
-              <select
-                className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-3 text-sm font-semibold text-zinc-900 transition-all hover:border-zinc-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:hover:border-zinc-600"
-                value={orderFilters.hub}
-                onChange={(e) => setOrderFilters(prev => ({ ...prev, hub: e.target.value }))}
-              >
-                <option value="">All Delivery Hubs</option>
-                {centers.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
             </div>
-          </div>
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Status</label>
-            <div className="relative mt-1.5 min-w-[160px]">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Status</label>
+              <div className="relative min-w-[180px]">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <select
+                  className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-3 text-sm font-bold text-zinc-900 transition-all hover:border-zinc-300 focus:border-primary focus:ring-4 focus:ring-primary/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  value={orderFilters.status}
+                  onChange={(e) => setOrderFilters(prev => ({ ...prev, status: e.target.value }))}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="assigned">Assigned</option>
+                  <option value="delivered">Delivered</option>
+                </select>
               </div>
-              <select
-                className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-10 pr-3 text-sm font-semibold text-zinc-900 transition-all hover:border-zinc-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:hover:border-zinc-600"
-                value={orderFilters.status}
-                onChange={(e) => setOrderFilters(prev => ({ ...prev, status: e.target.value }))}
-              >
-                <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="assigned">Assigned</option>
-                <option value="delivered">Delivered</option>
-              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Delivery date</label>
+              <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+                <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="truncate">
+                  {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Delivery date</label>
-            <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-              <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span className="font-semibold">
-                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </span>
-            </div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 border-t border-zinc-100 pt-4 lg:border-none lg:pt-0">
             <button
               onClick={() => setShowMarkAllConfirm(true)}
               disabled={orders.length === 0}
-              className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all hover:bg-blue-100 active:scale-95 disabled:opacity-50 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-blue-700 shadow-sm transition-all hover:bg-blue-100 active:scale-95 disabled:opacity-50 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>Mark All Delivered</span>
             </button>
-            <CleanupOrders 
-              onActionComplete={() => {
-                refreshOrders()
-                refreshRoutes()
-              }} 
-              toast={toast} 
-            />
+            <div className="w-full sm:w-auto">
+              <CleanupOrders 
+                onActionComplete={() => {
+                  refreshOrders()
+                  refreshRoutes()
+                }} 
+                toast={toast} 
+              />
+            </div>
           </div>
         </div>
       </Card>

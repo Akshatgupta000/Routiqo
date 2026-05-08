@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip, Polygon } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle, useMapEvents, Tooltip, Polygon, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -273,16 +273,18 @@ export default function MapView({
   const mapInstanceKey = 'logiroute-map'
 
   return (
-    <div className="relative h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+    <div className="relative h-full w-full overflow-hidden lg:rounded-2xl lg:border lg:border-zinc-200 lg:dark:border-zinc-800">
       <MapContainer
         key={mapInstanceKey}
         center={[20.5937, 78.9629]}
         zoom={5}
         preferCanvas={true}
-        className="z-0 h-full w-full min-h-[320px] sm:min-h-0"
+        className="z-0 h-full w-full"
         scrollWheelZoom
-        style={{ height: '100%', minHeight: '100%' }}
+        zoomControl={false}
+        style={{ height: '100%', width: '100%' }}
       >
+        <ZoomControl position={window.innerWidth < 1024 ? 'topright' : 'topleft'} />
         <MapZoomListener setZoom={setCurrentZoom} />
         <MapResize routeId={mapInstanceKey} />
         <FlyToFocus focus={mapFocus} />

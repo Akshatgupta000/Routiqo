@@ -94,19 +94,21 @@ export default function Vehicles() {
   ]
 
   return (
-    <div className="flex h-full flex-col overflow-auto p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex h-full flex-col overflow-auto p-4 lg:p-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
             Vehicles
           </h1>
-          <p className="text-sm text-zinc-500">Fleet capacity and availability.</p>
+          <p className="text-sm font-medium text-zinc-500">Fleet capacity and availability.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => resetFleetAction()} disabled={loading.resetFleet}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="secondary" onClick={() => resetFleetAction()} disabled={loading.resetFleet} className="w-full sm:w-auto">
             {loading.resetFleet ? 'Resetting...' : 'Reset Fleet Status'}
           </Button>
-          <Button onClick={() => setModal(true)}>Add vehicle</Button>
+          <Button onClick={() => setModal(true)} className="w-full sm:w-auto shadow-lg">
+            Add vehicle
+          </Button>
         </div>
       </div>
 

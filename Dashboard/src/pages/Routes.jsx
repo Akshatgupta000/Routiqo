@@ -106,18 +106,18 @@ export default function Routes() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-auto p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex h-full flex-col overflow-auto p-4 lg:p-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-2xl lg:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
             Routes
           </h1>
-          <p className="text-sm text-zinc-500">History and inspection.</p>
+          <p className="text-sm font-medium text-zinc-500">History and inspection.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button 
             variant="ghost" 
-            className="text-red-600 hover:bg-red-50" 
+            className="w-full sm:w-auto text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20" 
             onClick={async () => {
               if (window.confirm('Clear all routes and reset orders to pending?')) {
                 try {
@@ -132,13 +132,13 @@ export default function Routes() {
           >
             Clear all
           </Button>
-          <Button variant="secondary" onClick={regen}>
+          <Button variant="secondary" onClick={regen} className="w-full sm:w-auto">
             Regenerate center
           </Button>
         </div>
       </div>
 
-      <Card className="mb-4 text-xs text-zinc-500">
+      <Card className="mb-6 p-4 text-[11px] font-bold uppercase tracking-widest text-zinc-400 bg-zinc-50/50 dark:bg-zinc-900/50 border-none">
         Showing routes for sidebar center filter when set. Open a route on the dashboard map to
         inspect polylines and simulation.
       </Card>

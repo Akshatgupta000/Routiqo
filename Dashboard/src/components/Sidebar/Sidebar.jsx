@@ -8,15 +8,16 @@ import AddCenterModal from '../Forms/AddCenterModal'
 import Modal from '../UI/Modal'
 import { useState, useRef, useEffect } from 'react'
 import * as api from '../../services/api'
+import { LogOut, Sun, Moon, LayoutGrid, ClipboardList, Truck, Route } from 'lucide-react'
 
 const linkClass = ({ isActive }) =>
-  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
     isActive
       ? 'bg-zinc-900 text-white shadow-md dark:bg-white dark:text-zinc-900'
       : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
-  }`
+  } lg:justify-start justify-center lg:px-3 px-0`
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }) {
   const navigate = useNavigate()
   const {
     toggleTheme,
@@ -70,29 +71,18 @@ export default function Sidebar() {
     try {
       const response = await api.deleteCenter(deleteConfirmCenter.id)
       toast(response.message || 'Hub deleted and orders reassigned')
-      
-      // 1. Reset map and selections
       resetSelection()
-      
-      // 2. Optimistic local state clearing for immediate UI response
-      // This ensures vehicles and orders disappear instantly from map/sidebar
       setVehicles(prev => prev.filter(v => String(v.delivery_center_id) !== String(deleteConfirmCenter.id)))
       setOrders(prev => prev.filter(o => String(o.delivery_center_id) !== String(deleteConfirmCenter.id)))
-      
       setDeleteConfirmCenter(null)
       setShowHubs(false)
-      
-      // 3. Refresh all data to sync with the backend reassignments
       await Promise.all([
         refreshCenters(),
         refreshOrders(),
         refreshVehicles(),
         refreshRoutes()
       ])
-      
-      // 4. Automatically trigger global re-optimization for remaining hubs
       await generateRoutesAction()
-      
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || 'Failed to delete hub safely'
       toast(msg, 'error')
@@ -101,40 +91,57 @@ export default function Sidebar() {
     }
   }
 
+  const handleNavClick = () => {
+    if (onClose) onClose()
+  }
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-transparent">
-      <div className={`flex items-center justify-between gap-2 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-800 transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-            Last-Mile
-          </p>
-          <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
-            Routiqo
-          </h1>
+      {/* Brand Section */}
+      <div className={`flex items-center justify-between gap-2 border-b border-zinc-200/80 px-4 py-6 dark:border-zinc-800 transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 dark:bg-white shadow-lg">
+            <span className="text-sm font-black text-white dark:text-zinc-900">R</span>
+          </div>
+          <div className="hidden lg:block">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+              Last-Mile
+            </p>
+            <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+              Routiqo
+            </h1>
+          </div>
         </div>
-        <Button variant="secondary" className="!px-3 !py-2 text-xs" onClick={toggleTheme}>
-          {theme === 'dark' ? 'Light' : 'Dark'}
-        </Button>
+        <button
+          onClick={toggleTheme}
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 hover:bg-zinc-200 lg:bg-transparent lg:hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 lg:dark:bg-transparent lg:dark:hover:bg-zinc-800 transition-all"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
       </div>
 
-      <nav className={`flex flex-row flex-wrap gap-1 p-3 md:flex-col md:flex-nowrap transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
-        <NavLink to="/" end className={linkClass}>
-          <span className="text-lg">⌖</span> Dashboard
+      {/* Navigation */}
+      <nav className={`flex flex-col gap-1.5 p-3 transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
+        <NavLink to="/" end className={linkClass} onClick={handleNavClick}>
+          <LayoutGrid className="h-5 w-5 shrink-0" />
+          <span className="hidden lg:block">Dashboard</span>
         </NavLink>
-        <NavLink to="/orders" className={linkClass}>
-          <span className="text-lg">◎</span> Orders
+        <NavLink to="/orders" className={linkClass} onClick={handleNavClick}>
+          <ClipboardList className="h-5 w-5 shrink-0" />
+          <span className="hidden lg:block">Orders</span>
         </NavLink>
-        <NavLink to="/vehicles" className={linkClass}>
-          <span className="text-lg">⎔</span> Vehicles
+        <NavLink to="/vehicles" className={linkClass} onClick={handleNavClick}>
+          <Truck className="h-5 w-5 shrink-0" />
+          <span className="hidden lg:block">Vehicles</span>
         </NavLink>
-        <NavLink to="/routes" className={linkClass}>
-          <span className="text-lg">⎘</span> Routes
+        <NavLink to="/routes" className={linkClass} onClick={handleNavClick}>
+          <Route className="h-5 w-5 shrink-0" />
+          <span className="hidden lg:block">Routes</span>
         </NavLink>
       </nav>
 
-      {/* Compact iOS Calendar Picker */}
-      <div className={`flex-1 overflow-y-auto px-3 pb-2 custom-scrollbar transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
+      {/* Calendar - Compact/Hidden on tablet */}
+      <div className={`flex-1 overflow-y-auto px-3 pb-2 custom-scrollbar transition-all duration-300 md:hidden lg:block ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
         <CalendarPicker
           value={selectedDate}
           onChange={setSelectedDate}
@@ -143,111 +150,126 @@ export default function Sidebar() {
         />
       </div>
 
+      {/* Operations Hub Selection */}
       <div className="border-t border-zinc-200/80 p-4 dark:border-zinc-800 relative">
-        <div className="mb-2 flex items-center justify-between">
-          <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400">
-            Operations Hub
-          </label>
-        </div>
+        <label className="mb-3 block text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400 lg:block hidden">
+          Operations Hub
+        </label>
 
-        {/* Custom Premium Dropdown */}
         <div className="relative" ref={hubRef}>
           <button
             onClick={() => centers.length === 0 ? setAddCenterOpen(true) : setShowHubs(!showHubs)}
-            className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl transition-all border ${
+            className={`w-full flex items-center gap-3 rounded-xl transition-all border ${
               showHubs 
                 ? 'bg-zinc-50 border-zinc-300 ring-2 ring-zinc-900/5 dark:bg-zinc-800 dark:border-zinc-600' 
                 : 'bg-white border-zinc-200 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-zinc-700 shadow-sm'
-            }`}
+            } ${centers.length === 0 ? 'p-3' : 'lg:p-3 p-1 justify-center lg:justify-start'}`}
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${currentCenter ? 'bg-zinc-900 dark:bg-white' : (centers.length === 0 ? 'bg-primary/10 text-primary' : '')}`}>
-                <span className={`text-xs font-black ${currentCenter ? 'text-white dark:text-zinc-900' : ''}`}>
-                  {currentCenter ? currentCenter.name.charAt(0).toUpperCase() : (centers.length === 0 ? '+' : '○')}
-                </span>
-              </div>
-              <div className="text-left min-w-0">
-                <p className={`text-sm font-black truncate tracking-tight leading-none ${currentCenter ? 'text-zinc-900 dark:text-white' : 'text-primary'}`}>
-                  {centers.length === 0 ? 'New Hub' : (currentCenter ? currentCenter.name : 'Select a Hub')}
-                </p>
-                <p className="text-[10px] text-zinc-500 truncate">
-                  {centers.length === 0 ? 'Create your first hub' : (currentCenter ? currentCenter.address : 'Click to choose')}
-                </p>
-              </div>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${currentCenter ? 'bg-zinc-900 dark:bg-white' : (centers.length === 0 ? 'bg-primary/10 text-primary' : 'bg-zinc-100 dark:bg-zinc-800')}`}>
+              <span className={`text-xs font-black ${currentCenter ? 'text-white dark:text-zinc-900' : 'text-zinc-500'}`}>
+                {currentCenter ? currentCenter.name.charAt(0).toUpperCase() : (centers.length === 0 ? '+' : '○')}
+              </span>
             </div>
-            {centers.length > 0 && (
-              <svg 
-                className={`w-4 h-4 text-zinc-400 transition-transform duration-300 ${showHubs ? 'rotate-180' : ''}`} 
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-              </svg>
-            )}
+            
+            <div className="text-left min-w-0 hidden lg:block flex-1">
+              <p className={`text-sm font-black truncate tracking-tight leading-none ${currentCenter ? 'text-zinc-900 dark:text-white' : 'text-primary'}`}>
+                {centers.length === 0 ? 'New Hub' : (currentCenter ? currentCenter.name : 'Select a Hub')}
+              </p>
+              <p className="mt-1 text-[10px] text-zinc-500 truncate">
+                {centers.length === 0 ? 'Create your first hub' : (currentCenter ? currentCenter.address : 'Click to choose')}
+              </p>
+            </div>
+
+            <svg 
+              className={`w-4 h-4 text-zinc-400 transition-transform duration-300 hidden lg:block ${showHubs ? 'rotate-180' : ''}`} 
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
 
-          {/* Floating Hub List */}
+          {/* Hub List Popup */}
           {showHubs && (
-            <>
-              <div className="absolute bottom-full mb-2 left-0 right-0 z-[70] bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl shadow-zinc-900/20 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pl-2">Available Hubs</span>
-                  <button 
-                    onClick={() => {
-                      setShowHubs(false);
-                      setAddCenterOpen(true);
-                    }}
-                    className="text-[10px] font-black uppercase text-primary hover:opacity-80 px-2 py-1"
-                  >
-                    + New Hub
-                  </button>
-                </div>
-                <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
-                  {centers.map((c) => {
-                    const isSelected = selectedCenterId === c.id
-                    return (
-                      <div key={c.id} className="group relative flex gap-1">
-                        <button
-                          onClick={() => {
-                            setSelectedCenterId(c.id)
-                            setActiveMultiRoutes([])
-                            setActiveRouteBase(null)
-                            setShowHubs(false)
-                            navigate('/')
-                          }}
-                          className={`flex-1 flex items-center gap-3 p-2.5 rounded-xl transition-all ${
-                            isSelected 
-                              ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-lg' 
-                              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-                          }`}
-                        >
-                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
-                          <div className="text-left min-w-0">
-                            <p className="text-xs font-bold truncate">{c.name}</p>
-                            <p className={`text-[9px] truncate ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>{c.address}</p>
-                          </div>
-                        </button>
-                        
-                        <div className="flex items-center pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            title="Delete"
-                            className={`p-1.5 rounded-lg ${isSelected ? 'text-white/50 hover:text-red-400' : 'text-red-400 hover:text-red-500'}`}
-                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmCenter(c); }}
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+            <div className="absolute bottom-full left-0 mb-4 w-72 z-[70] bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl shadow-zinc-950/20 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pl-2">Available Hubs</span>
+                <button 
+                  onClick={() => {
+                    setShowHubs(false);
+                    setAddCenterOpen(true);
+                  }}
+                  className="text-[10px] font-black uppercase text-primary hover:opacity-80 px-2 py-1"
+                >
+                  + New Hub
+                </button>
               </div>
-            </>
+              <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+                {centers.map((c) => {
+                  const isSelected = selectedCenterId === c.id
+                  return (
+                    <div key={c.id} className="group relative flex gap-1">
+                      <button
+                        onClick={() => {
+                          setSelectedCenterId(c.id)
+                          setActiveMultiRoutes([])
+                          setActiveRouteBase(null)
+                          setShowHubs(false)
+                          navigate('/')
+                          handleNavClick()
+                        }}
+                        className={`flex-1 flex items-center gap-3 p-3 rounded-xl transition-all ${
+                          isSelected 
+                            ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-lg' 
+                            : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
+                        <div className="text-left min-w-0">
+                          <p className="text-xs font-bold truncate">{c.name}</p>
+                          <p className={`text-[10px] truncate ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>{c.address}</p>
+                        </div>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      <AddCenterModal open={addCenterOpen} onClose={() => setAddCenterOpen(false)} />
+      {/* User Profile */}
+      <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800">
+        <div className={`flex items-center gap-3 px-1 ${centers.length === 0 ? 'justify-between' : 'lg:justify-between justify-center'}`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0 border-2 border-white dark:border-zinc-900 shadow-sm">
+              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                {JSON.parse(localStorage.getItem('user') || '{}')?.name?.charAt(0).toUpperCase() || 'U'}
+              </span>
+            </div>
+            <div className="min-w-0 hidden lg:block">
+              <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">
+                {JSON.parse(localStorage.getItem('user') || '{}')?.name || 'User'}
+              </p>
+              <p className="text-[10px] text-zinc-500 truncate">
+                {JSON.parse(localStorage.getItem('user') || '{}')?.email || ''}
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              localStorage.clear()
+              window.location.href = import.meta.env.VITE_LANDING_URL
+            }}
+            className="p-2.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all hidden lg:block"
+            title="Logout"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
 
+      <AddCenterModal open={addCenterOpen} onClose={() => setAddCenterOpen(false)} />
       <Modal
         open={!!deleteConfirmCenter}
         onClose={() => setDeleteConfirmCenter(null)}
@@ -261,56 +283,10 @@ export default function Sidebar() {
           </div>
         }
       >
-        <div className="space-y-4">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Are you sure you want to delete <span className="font-bold text-zinc-900 dark:text-white">"{deleteConfirmCenter?.name}"</span>?
-          </p>
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-500/20 dark:bg-red-500/10">
-            <div className="flex items-start gap-3 text-red-600 dark:text-red-400">
-              <svg className="mt-0.5 h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div className="text-sm">
-                <p className="font-bold">Important Warning</p>
-                <p className="mt-1 opacity-90">Deleting this hub will orphan all existing orders and vehicles associated with it. They will no longer appear on the delivery schedule until manually re-assigned.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <p className="text-sm text-zinc-500">
+          Are you sure you want to delete "{deleteConfirmCenter?.name}"? This will orphan all associated data.
+        </p>
       </Modal>
-
-      {/* User Profile & Logout */}
-      <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800">
-        <div className="flex items-center justify-between gap-3 px-1">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-              <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
-                {JSON.parse(localStorage.getItem('user') || '{}')?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold text-zinc-900 dark:text-white truncate">
-                {JSON.parse(localStorage.getItem('user') || '{}')?.name || 'User'}
-              </p>
-              <p className="text-[9px] text-zinc-500 truncate">
-                {JSON.parse(localStorage.getItem('user') || '{}')?.email || ''}
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={() => {
-              localStorage.clear()
-              window.location.href = import.meta.env.VITE_LANDING_URL
-            }}
-            className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all"
-            title="Logout"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
