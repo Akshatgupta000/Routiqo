@@ -22,7 +22,7 @@ class AuthController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users',
+                'email' => 'required|string|email|max:255|unique:mongodb.users,email',
                 'password' => 'required|string|min:8',
             ]);
 
