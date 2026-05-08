@@ -9,6 +9,7 @@ import Modal from '../UI/Modal'
 import { useState, useRef, useEffect } from 'react'
 import * as api from '../../services/api'
 import { LogOut, Sun, Moon, LayoutGrid, ClipboardList, Truck, Route } from 'lucide-react'
+import avatar from '../../assets/avatar.png'
 
 const linkClass = ({ isActive }) =>
   `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
@@ -98,19 +99,14 @@ export default function Sidebar({ onClose }) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-transparent">
       {/* Brand Section */}
-      <div className={`flex items-center justify-between gap-2 border-b border-zinc-200/80 px-4 py-6 dark:border-zinc-800 transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 dark:bg-white shadow-lg">
-            <span className="text-sm font-black text-white dark:text-zinc-900">R</span>
-          </div>
-          <div className="hidden lg:block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-              Last-Mile
-            </p>
-            <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
-              Routiqo
-            </h1>
-          </div>
+      <div className={`flex items-center justify-between gap-2 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-800 transition-all duration-300 ${showHubs ? 'blur-[2px] opacity-40 grayscale pointer-events-none' : ''}`}>
+        <div className="flex flex-col">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+            Last-Mile
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            Routiqo
+          </h1>
         </div>
         <button
           onClick={toggleTheme}
@@ -151,21 +147,21 @@ export default function Sidebar({ onClose }) {
       </div>
 
       {/* Operations Hub Selection */}
-      <div className="border-t border-zinc-200/80 p-4 dark:border-zinc-800 relative">
-        <label className="mb-3 block text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400 lg:block hidden">
+      <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800 relative">
+        <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400 lg:block hidden">
           Operations Hub
         </label>
 
         <div className="relative" ref={hubRef}>
           <button
             onClick={() => centers.length === 0 ? setAddCenterOpen(true) : setShowHubs(!showHubs)}
-            className={`w-full flex items-center gap-3 rounded-xl transition-all border ${
+            className={`w-full flex items-center gap-2 rounded-xl transition-all border ${
               showHubs 
                 ? 'bg-zinc-50 border-zinc-300 ring-2 ring-zinc-900/5 dark:bg-zinc-800 dark:border-zinc-600' 
                 : 'bg-white border-zinc-200 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-zinc-700 shadow-sm'
-            } ${centers.length === 0 ? 'p-3' : 'lg:p-3 p-1 justify-center lg:justify-start'}`}
+            } ${centers.length === 0 ? 'p-3' : 'lg:p-2 p-1 justify-center lg:justify-start'}`}
           >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${currentCenter ? 'bg-zinc-900 dark:bg-white' : (centers.length === 0 ? 'bg-primary/10 text-primary' : 'bg-zinc-100 dark:bg-zinc-800')}`}>
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${currentCenter ? 'bg-zinc-900 dark:bg-white' : (centers.length === 0 ? 'bg-primary/10 text-primary' : 'bg-zinc-100 dark:bg-zinc-800')}`}>
               <span className={`text-xs font-black ${currentCenter ? 'text-white dark:text-zinc-900' : 'text-zinc-500'}`}>
                 {currentCenter ? currentCenter.name.charAt(0).toUpperCase() : (centers.length === 0 ? '+' : '○')}
               </span>
@@ -175,7 +171,7 @@ export default function Sidebar({ onClose }) {
               <p className={`text-sm font-black truncate tracking-tight leading-none ${currentCenter ? 'text-zinc-900 dark:text-white' : 'text-primary'}`}>
                 {centers.length === 0 ? 'New Hub' : (currentCenter ? currentCenter.name : 'Select a Hub')}
               </p>
-              <p className="mt-1 text-[10px] text-zinc-500 truncate">
+              <p className="mt-0.5 text-[10px] text-zinc-500 truncate">
                 {centers.length === 0 ? 'Create your first hub' : (currentCenter ? currentCenter.address : 'Click to choose')}
               </p>
             </div>
@@ -242,10 +238,8 @@ export default function Sidebar({ onClose }) {
       <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800">
         <div className={`flex items-center gap-3 px-1 ${centers.length === 0 ? 'justify-between' : 'lg:justify-between justify-center'}`}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0 border-2 border-white dark:border-zinc-900 shadow-sm">
-              <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
-                {JSON.parse(localStorage.getItem('user') || '{}')?.name?.charAt(0).toUpperCase() || 'U'}
-              </span>
+            <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
+              <img src={avatar} alt="User Avatar" className="w-full h-full object-cover scale-110" />
             </div>
             <div className="min-w-0 hidden lg:block">
               <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">

@@ -34,12 +34,12 @@ export default function Layout() {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-zinc-100 text-zinc-900 md:flex-row dark:bg-zinc-950 dark:text-zinc-100">
       {/* Mobile Header */}
-      <header className="flex h-16 w-full shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 dark:bg-white">
-            <span className="text-xs font-black text-white dark:text-zinc-900">R</span>
-          </div>
-          <h1 className="text-lg font-bold tracking-tight">Routiqo</h1>
+      <header className="flex h-14 w-full shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="flex flex-col">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 leading-none mb-1">
+            Last-Mile
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight leading-none">Routiqo</h1>
         </div>
         <button
           onClick={() => setSidebarOpen(true)}
