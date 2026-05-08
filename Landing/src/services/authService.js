@@ -1,4 +1,4 @@
-const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
+const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/+$/, '');
 const API_URL = `${baseUrl}/auth`;
 
 const authService = {
