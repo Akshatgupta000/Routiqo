@@ -11,6 +11,7 @@ return [
         'http://localhost:5174',
         'https://routiqo-dashboard.vercel.app',
         'https://routiqo-landing.vercel.app',
+        'https://routiqo-nu.vercel.app',
     ],
 
 
