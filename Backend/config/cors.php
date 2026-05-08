@@ -9,14 +9,12 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',
         'http://localhost:5174',
-        'https://routiqo-dashboard.vercel.app',
-        'https://routiqo-landing.vercel.app',
-        'https://routiqo-nu.vercel.app',
-        'https://routiqo-u3vk.vercel.app',
     ],
 
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/.*\.vercel\.app$/',
+    ],
 
     'allowed_headers' => ['*'],
 
