@@ -38,12 +38,19 @@ client.interceptors.response.use(
     return response
   },
   (error) => {
-    // Handle Rupee Roast style { success: false, message: ... }
     const msg =
       error?.response?.data?.message ||
       error?.response?.data?.errors ||
       error.message ||
       'Request failed'
+
+    if (error?.response?.status === 401) {
+      localStorage.clear();
+      const landingUrl = import.meta.env.VITE_LANDING_URL;
+      if (landingUrl) {
+        window.location.href = landingUrl;
+      }
+    }
     
     if (import.meta.env.DEV) {
       console.error('[API ERR]', error?.response?.status, error?.config?.url, msg)

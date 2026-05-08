@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 // Healthcheck
 Route::get('/up', function () {
-    return response()->json(['status' => 'ok', 'environment' => app()->environment()]);
+    return response()->json(['status' => 'ok']);
 });
 
 // Public Auth Routes

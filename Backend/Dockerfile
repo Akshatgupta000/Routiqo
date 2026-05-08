@@ -1,5 +1,8 @@
 FROM php:8.2-cli
 
+# Set working directory
+WORKDIR /app
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -11,26 +14,29 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev
 
-# Install MongoDB extension
+# Install PHP extensions
 RUN pecl install mongodb && docker-php-ext-enable mongodb
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-WORKDIR /app
-
-# Copy application
+# Copy application files
 COPY . .
 
 # Install dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Laravel optimizations
+# Optimize Laravel
 RUN php artisan optimize:clear || true
 RUN php artisan config:cache || true
 RUN php artisan route:cache || true
 
+# Set environment variables for production
+ENV APP_ENV=production
+ENV APP_DEBUG=false
+
+# Expose port
 EXPOSE 10000
 
-# Use a shell script or direct command to bind to the port provided by the environment
+# Start Laravel
 CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
