@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom'
 import { formatId } from '../utils/format'
 import { Share2 } from 'lucide-react'
 import { buildGoogleMapsLink } from '../utils/maps'
+import Modal from '../components/UI/Modal'
+import { useState } from 'react'
 
 export default function Routes() {
   const {
@@ -19,6 +21,7 @@ export default function Routes() {
     centers,
   } = useApp()
   const navigate = useNavigate()
+  const [stopsRoute, setStopsRoute] = useState(null)
 
   const filtered = selectedCenterId
     ? routesList.filter((r) => r.delivery_center?.id === selectedCenterId)
@@ -53,23 +56,43 @@ export default function Routes() {
       key: 'location',
       label: 'Main Location',
       render: (r) => {
-        const addr = r.stops?.[0]?.order?.address || 'No address'
+        const stops = r.stops || [];
+        const addr = stops[0]?.order?.address || 'No address'
         return (
-          <div className="flex flex-col">
-            <span 
-              className="text-zinc-600 dark:text-zinc-400 line-clamp-1 max-w-[200px] text-xs font-medium" 
-              title={addr}
-            >
+          <button 
+            onClick={(e) => {
+              e.stopPropagation()
+              setStopsRoute(r)
+            }}
+            className="flex flex-col text-left hover:opacity-70 transition-opacity group"
+          >
+            <span className="text-zinc-600 dark:text-zinc-400 line-clamp-1 max-w-[200px] text-xs font-medium border-b border-dashed border-zinc-300 dark:border-zinc-700 pb-0.5">
               {addr}
             </span>
-            {r.stops?.length > 1 && (
-              <span className="text-[10px] text-zinc-400">
-                + {r.stops.length - 1} more stops
+            {stops.length > 1 && (
+              <span className="text-[10px] text-zinc-400 mt-0.5">
+                + {stops.length - 1} more stops
               </span>
             )}
-          </div>
+          </button>
         )
       }
+    },
+    {
+      key: 'driver',
+      label: 'Driver',
+      render: (r) => (
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border border-zinc-200 dark:border-zinc-700 shadow-sm">
+            <span className="text-[10px] font-black text-zinc-500 uppercase">
+              {(r.vehicle?.name || 'U').charAt(0)}
+            </span>
+          </div>
+          <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+            {r.vehicle?.name || 'Unassigned'}
+          </span>
+        </div>
+      )
     },
     {
       key: 'dist',
@@ -176,6 +199,45 @@ export default function Routes() {
       </Card>
 
       <Table columns={columns} rows={filtered} empty="No routes yet. Generate from dashboard." />
+
+      <Modal
+        open={!!stopsRoute}
+        onClose={() => setStopsRoute(null)}
+        title={stopsRoute ? `Route Stops (${stopsRoute.stops?.length})` : 'Route Stops'}
+        className="max-w-md"
+      >
+        <div className="space-y-4 py-2">
+          <div className="flex flex-col gap-1 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Primary Location</p>
+            <p className="text-sm font-bold text-zinc-900 dark:text-white">{getRouteName(stopsRoute)}</p>
+          </div>
+          
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+            {stopsRoute?.stops?.map((s, idx) => (
+              <div key={idx} className="flex gap-4 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-100 dark:hover:border-zinc-800 group">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-900 dark:bg-white font-black text-white dark:text-zinc-900 text-[10px] shadow-lg">
+                  {idx + 1}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-black text-zinc-900 dark:text-white uppercase tracking-tight">Stop {idx + 1}</span>
+                    {idx === 0 && <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase">Origin</span>}
+                    {idx === (stopsRoute.stops.length - 1) && <span className="px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase">Final</span>}
+                  </div>
+                  <span className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
+                    {s.order?.address || 'Unknown address'}
+                  </span>
+                  {s.eta && <p className="mt-1 text-[10px] font-bold text-zinc-400">ETA: {s.eta}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <Button variant="secondary" className="w-full" onClick={() => setStopsRoute(null)}>
+            Close Details
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

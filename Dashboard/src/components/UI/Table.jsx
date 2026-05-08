@@ -8,8 +8,8 @@ export default function Table({ columns, rows, empty }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-      <div className="overflow-x-auto custom-scrollbar">
+    <div className="overflow-visible rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+      <div className="overflow-x-auto overflow-y-visible custom-scrollbar">
         <table className="w-full text-left text-sm md:table block">
           <thead className="bg-zinc-50/50 dark:bg-zinc-900/50 md:table-header-group hidden">
             <tr>
@@ -27,7 +27,7 @@ export default function Table({ columns, rows, empty }) {
             {rows.map((row, i) => (
               <tr
                 key={row.id ?? i}
-                className="transition-all hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 md:table-row block group"
+                className="transition-all hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 md:table-row block group relative hover:z-50"
               >
                 {columns.map((col) => (
                   <td 

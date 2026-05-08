@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Card from '../UI/Card'
 import { formatKm, formatId } from '../../utils/format'
+import { ChevronRight } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 
 const ROUTE_COLORS = [
@@ -124,10 +125,8 @@ export default function FleetOverview({ onToggleSequence, showSequence }) {
               <span className="text-[10px] font-bold text-zinc-400">
                 {activeRoute.stops?.length || 0} STOPS
               </span>
-              <div className={`p-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 transition-transform ${showSequence ? 'rotate-180' : ''}`}>
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
+              <div className="p-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-primary transition-colors">
+                <ChevronRight className="w-3 h-3" />
               </div>
             </div>
           </button>

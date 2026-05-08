@@ -482,13 +482,13 @@ body {
   background: white !important;
 }
 
-/* Days with orders — subtle highlight + orange dot */
+/* Days with orders — only orange dot */
 .cal-day--has-orders {
-  background: rgba(251, 146, 60, 0.08);
+  background: transparent;
 }
 
 .dark .cal-day--has-orders {
-  background: rgba(251, 146, 60, 0.1);
+  background: transparent;
 }
 
 .cal-order-dot {

@@ -8,7 +8,17 @@ import * as api from '../services/api'
 import { useApp } from '../context/AppContext'
 
 export default function Vehicles() {
-  const { vehicles, refreshVehicles, toast, centers, resetFleetAction, loading, toggleVehicleAvailability } = useApp()
+  const { 
+    vehicles, 
+    refreshVehicles, 
+    toast, 
+    centers, 
+    resetFleetAction, 
+    loading, 
+    toggleVehicleAvailability,
+    resetSelection,
+    generateRoutesAction
+  } = useApp()
   const [modal, setModal] = useState(false)
   const [editVehicle, setEditVehicle] = useState(null)
 
@@ -74,8 +84,10 @@ export default function Vehicles() {
             onClick={async () => {
               try {
                 await api.deleteVehicle(r.id)
-                toast('Vehicle deleted.')
-                refreshVehicles()
+                toast('Vehicle deleted. Synchronizing map...')
+                resetSelection()
+                await refreshVehicles()
+                await generateRoutesAction()
               } catch (err) {
                 toast('Failed to delete vehicle.', 'error')
               }
