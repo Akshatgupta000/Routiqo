@@ -7,6 +7,11 @@ use App\Http\Controllers\Api\RouteController;
 use App\Http\Controllers\Api\VehicleController;
 use Illuminate\Support\Facades\Route;
 
+// Healthcheck
+Route::get('/up', function () {
+    return response()->json(['status' => 'ok', 'environment' => app()->environment()]);
+});
+
 // Public Auth Routes
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);

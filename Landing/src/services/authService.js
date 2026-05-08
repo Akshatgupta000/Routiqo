@@ -1,4 +1,4 @@
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/auth`;
+const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
 console.log('[Auth] API_URL initialized as:', API_URL);
 

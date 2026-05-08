@@ -12,6 +12,12 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $connection = 'mongodb';
+
+    protected $primaryKey = '_id';
+
+    protected $keyType = 'string';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -55,6 +61,6 @@ class User extends Authenticatable
      */
     public function tokens()
     {
-        return $this->morphMany(\Laravel\Sanctum\Sanctum::$personalAccessTokenModel, 'tokenable');
+        return $this->morphMany(\App\Models\Sanctum\PersonalAccessToken::class, 'tokenable');
     }
 }
