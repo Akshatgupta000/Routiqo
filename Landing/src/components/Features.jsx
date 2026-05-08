@@ -14,13 +14,13 @@ const Features = () => {
       title: "Real-Time Tracking",
       desc: "Monitor every vehicle, driver, and shipment in real-time with precise GPS tracking.",
       icon: <Map className="w-8 h-8" />,
-      dark: true,
+      dark: false,
     },
     {
       title: "Fleet Management",
       desc: "Manage vehicle maintenance, fuel usage, and driver performance in one dashboard.",
       icon: <ShieldCheck className="w-8 h-8" />,
-      dark: true,
+      dark: false,
     },
     {
       title: "Smart Dispatching",
@@ -31,7 +31,7 @@ const Features = () => {
   ];
 
   return (
-    <section id="features" className="py-16 px-4 bg-[#FAFAFA]">
+    <section id="features" className="py-16 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <motion.h2 

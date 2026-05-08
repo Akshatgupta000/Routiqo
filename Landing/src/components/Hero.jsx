@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Truck, Zap } from 'lucide-react';
+import { ArrowRight, Truck, Zap } from 'lucide-react';
 
 const Hero = ({ openAuth }) => {
   return (
@@ -81,24 +81,27 @@ const Hero = ({ openAuth }) => {
             <motion.div 
               animate={{ y: [0, 15, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -bottom-6 -right-4 bg-dark text-white p-4 rounded-xl shadow-2xl hidden md:block"
+              className="absolute -bottom-6 -right-4 bg-dark text-white p-4 rounded-xl shadow-2xl hidden md:block border border-white/5"
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center text-dark">
-                  <MapPin size={14} />
+                  <Zap size={14} />
                 </div>
-                <span className="text-sm font-semibold">Live Tracking</span>
+                <span className="text-sm font-semibold">Route Optimization</span>
               </div>
-              <div className="space-y-1.5">
-                <div className="w-24 h-1 bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: "75%" }}
-                    transition={{ duration: 2, delay: 1 }}
-                    className="h-full bg-primary" 
-                  />
+              <div className="space-y-2">
+                <div className="flex justify-between items-center gap-4">
+                  <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: "94%" }}
+                      transition={{ duration: 2, delay: 1 }}
+                      className="h-full bg-primary" 
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-primary">94%</span>
                 </div>
-                <div className="w-16 h-1 bg-gray-700 rounded-full" />
+                <p className="text-[8px] text-text-secondary uppercase tracking-wider font-bold">Efficiency Increase</p>
               </div>
             </motion.div>
           </motion.div>
