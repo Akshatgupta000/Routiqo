@@ -2,31 +2,33 @@ providers = ["php"]
 
 [phases.setup]
 nixPkgs = [
-    "php82",
-    "php82Packages.composer",
-    "php82Extensions.mongodb",
-    "php82Extensions.pdo",
-    "php82Extensions.mbstring",
-    "php82Extensions.xml",
-    "php82Extensions.curl",
-    "php82Extensions.zip",
-    "php82Extensions.dom",
-    "php82Extensions.fileinfo"
+  "php82",
+  "php82Packages.composer",
+  "php82Extensions.pdo",
+  "php82Extensions.pdo_sqlite",
+  "php82Extensions.mbstring",
+  "php82Extensions.xml",
+  "php82Extensions.curl",
+  "php82Extensions.zip",
+  "php82Extensions.dom",
+  "php82Extensions.fileinfo",
+  "php82Extensions.mongodb"
 ]
 
 [phases.install]
 dependsOn = ["setup"]
 cmds = [
-    "composer install --ignore-platform-req=ext-mongodb --no-interaction --prefer-dist --optimize-autoloader --no-dev"
+    "composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev"
 ]
 
 [phases.build]
 dependsOn = ["install"]
 cmds = [
-    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan optimize:clear",
-    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan config:cache",
-    "CACHE_STORE=file DB_CONNECTION=sqlite php artisan route:cache"
+    "php artisan optimize:clear",
+    "php artisan config:cache",
+    "php artisan route:cache"
 ]
 
 [start]
-cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "php artisan config:clear && php artisan optimize && php artisan serve --host=0.0.0.0 --port=$PORT"
+
