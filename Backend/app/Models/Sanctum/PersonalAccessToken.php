@@ -1,13 +1,11 @@
 <?php
 namespace App\Models\Sanctum;
 
-use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
-use MongoDB\Laravel\Eloquent\HybridRelations;
+use MongoDB\Laravel\Eloquent\Model;
+use Laravel\Sanctum\Contracts\HasAbilities;
 
-class PersonalAccessToken extends SanctumPersonalAccessToken
+class PersonalAccessToken extends Model implements HasAbilities
 {
-    use HybridRelations;
-
     protected $connection = 'mongodb';
     protected $collection = 'personal_access_tokens';
 
@@ -26,5 +24,22 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
         'last_used_at' => 'datetime',
         'expires_at' => 'datetime',
     ];
+
+    public function tokenable()
+    {
+        return $this->morphTo('tokenable');
+    }
+
+    public function can($ability)
+    {
+        return in_array('*', $this->abilities) ||
+               in_array($ability, $this->abilities);
+    }
+
+    public function cant($ability)
+    {
+        return ! $this->can($ability);
+    }
 }
+
 
