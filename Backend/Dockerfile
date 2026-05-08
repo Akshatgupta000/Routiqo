@@ -28,8 +28,6 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Optimize Laravel
 RUN php artisan optimize:clear || true
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
 
 # Set environment variables for production
 ENV APP_ENV=production
