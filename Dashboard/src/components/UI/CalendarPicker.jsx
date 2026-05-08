@@ -194,7 +194,7 @@ export default function CalendarPicker({ value, onChange, orderCount, compact = 
                 'cal-day',
                 !cell.isCurrentMonth && 'cal-day--outside',
                 isSelected && 'cal-day--selected',
-                today && !isSelected && 'cal-day--today',
+                today && 'cal-day--today',
                 hasOrders && !isSelected && 'cal-day--has-orders',
               ].filter(Boolean).join(' ')}
             >
@@ -202,7 +202,7 @@ export default function CalendarPicker({ value, onChange, orderCount, compact = 
               {hasOrders && (
                 <span className="cal-order-dot" />
               )}
-              {today && !isSelected && !hasOrders && <span className="cal-today-dot" />}
+              {today && !hasOrders && <span className="cal-today-dot" />}
             </button>
           )
         })}

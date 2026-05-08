@@ -5,10 +5,11 @@ import CalendarPicker from '../UI/CalendarPicker'
 import { useApp } from '../../context/AppContext'
 import { formatDuration, formatKm } from '../../utils/format'
 import AddCenterModal from '../Forms/AddCenterModal'
+import EditCenterModal from '../Forms/EditCenterModal'
 import Modal from '../UI/Modal'
 import { useState, useRef, useEffect } from 'react'
 import * as api from '../../services/api'
-import { LogOut, Sun, Moon, LayoutGrid, ClipboardList, Truck, Route } from 'lucide-react'
+import { LogOut, Sun, Moon, LayoutGrid, ClipboardList, Truck, Route, Trash2, Pencil } from 'lucide-react'
 import avatar from '../../assets/avatar.png'
 
 const linkClass = ({ isActive }) =>
@@ -44,6 +45,7 @@ export default function Sidebar({ onClose }) {
 
   const [showHubs, setShowHubs] = useState(false)
   const [addCenterOpen, setAddCenterOpen] = useState(false)
+  const [editingCenter, setEditingCenter] = useState(null)
   const [deleteConfirmCenter, setDeleteConfirmCenter] = useState(null)
 
   const currentCenter = centers.find(c => String(c.id) === String(selectedCenterId))
@@ -220,11 +222,43 @@ export default function Sidebar({ onClose }) {
                         }`}
                       >
                         <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
-                        <div className="text-left min-w-0">
+                        <div className="text-left min-w-0 flex-1">
                           <p className="text-xs font-bold truncate">{c.name}</p>
                           <p className={`text-[10px] truncate ${isSelected ? 'text-zinc-400' : 'text-zinc-500'}`}>{c.address}</p>
                         </div>
                       </button>
+                      
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditingCenter(c)
+                          }}
+                          className={`p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
+                            isSelected 
+                              ? 'text-white/60 hover:text-white hover:bg-white/20' 
+                              : 'text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20'
+                          }`}
+                          title="Edit Hub"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleteConfirmCenter(c)
+                          }}
+                          className={`p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
+                            isSelected 
+                              ? 'text-white/60 hover:text-white hover:bg-white/20' 
+                              : 'text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
+                          }`}
+                          title="Delete Hub"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
@@ -264,6 +298,7 @@ export default function Sidebar({ onClose }) {
       </div>
 
       <AddCenterModal open={addCenterOpen} onClose={() => setAddCenterOpen(false)} />
+      <EditCenterModal open={!!editingCenter} onClose={() => setEditingCenter(null)} center={editingCenter} />
       <Modal
         open={!!deleteConfirmCenter}
         onClose={() => setDeleteConfirmCenter(null)}

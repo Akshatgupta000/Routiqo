@@ -451,6 +451,11 @@ body {
 }
 
 /* Today dot indicator */
+.cal-day--today:not(.cal-day--selected) {
+  background: rgba(163, 255, 63, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(163, 255, 63, 0.3);
+}
+
 .cal-day--today .cal-day-num {
   color: var(--color-primary);
   font-weight: 700;
@@ -471,6 +476,10 @@ body {
 
 .dark .cal-today-dot {
   background: #88D635;
+}
+
+.cal-day--selected .cal-today-dot {
+  background: white !important;
 }
 
 /* Days with orders — subtle highlight + orange dot */

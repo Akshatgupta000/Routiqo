@@ -1,12 +1,13 @@
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
 import Table from '../components/UI/Table'
-import Badge from '../components/UI/Badge'
 import { formatDuration, formatKm } from '../utils/format'
 import { useApp } from '../context/AppContext'
 import * as api from '../services/api'
 import { useNavigate } from 'react-router-dom'
 import { formatId } from '../utils/format'
+import { Share2 } from 'lucide-react'
+import { buildGoogleMapsLink } from '../utils/maps'
 
 export default function Routes() {
   const {
@@ -15,6 +16,7 @@ export default function Routes() {
     selectRouteFromList,
     toast,
     selectedCenterId,
+    centers,
   } = useApp()
   const navigate = useNavigate()
 
@@ -48,14 +50,26 @@ export default function Routes() {
   const columns = [
     { key: 'route_id', label: 'Route Name', render: (r) => <span className="font-bold text-zinc-900 dark:text-zinc-100">{getRouteName(r)}</span> },
     {
-      key: 'profile',
-      label: 'Profile',
-      render: (r) => <Badge>{r.optimization_profile ?? '—'}</Badge>,
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (r) => <Badge status={r.status}>{r.status}</Badge>,
+      key: 'location',
+      label: 'Main Location',
+      render: (r) => {
+        const addr = r.stops?.[0]?.order?.address || 'No address'
+        return (
+          <div className="flex flex-col">
+            <span 
+              className="text-zinc-600 dark:text-zinc-400 line-clamp-1 max-w-[200px] text-xs font-medium" 
+              title={addr}
+            >
+              {addr}
+            </span>
+            {r.stops?.length > 1 && (
+              <span className="text-[10px] text-zinc-400">
+                + {r.stops.length - 1} more stops
+              </span>
+            )}
+          </div>
+        )
+      }
     },
     {
       key: 'dist',
@@ -76,17 +90,35 @@ export default function Routes() {
       key: 'actions',
       label: '',
       render: (r) => (
-        <Button
-          variant="secondary"
-          className="!py-1 !text-xs"
-          onClick={() => {
-            selectRouteFromList(r)
-            navigate('/')
-            toast('Route loaded on dashboard map.')
-          }}
-        >
-          View on map
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            className="!py-1 !text-xs"
+            onClick={() => {
+              selectRouteFromList(r)
+              navigate('/')
+              toast('Route loaded on dashboard map.')
+            }}
+          >
+            View on map
+          </Button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              const link = buildGoogleMapsLink(r, centers)
+              if (link) {
+                navigator.clipboard.writeText(link)
+                toast('Route link copied to clipboard!')
+              } else {
+                toast('No stops to share', 'error')
+              }
+            }}
+            title="Share Route"
+            className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all shadow-sm"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       ),
     },
   ]

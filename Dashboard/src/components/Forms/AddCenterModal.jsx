@@ -6,7 +6,7 @@ import { useApp } from '../../context/AppContext'
 import AddressAutocomplete from '../UI/AddressAutocomplete'
 
 export default function AddCenterModal({ open, onClose, initialData }) {
-  const { addCenterAction, toast } = useApp()
+  const { addCenterAction, toast, centers } = useApp()
   const [form, setForm] = useState({
     name: '',
     address: '',
@@ -60,12 +60,26 @@ export default function AddCenterModal({ open, onClose, initialData }) {
       return
     }
 
+    const lat = Number(form.latitude)
+    const lng = Number(form.longitude)
+
+    // Check for duplicate location
+    const exists = centers.find(c => 
+      Math.abs(Number(c.latitude) - lat) < 0.0001 && 
+      Math.abs(Number(c.longitude) - lng) < 0.0001
+    )
+
+    if (exists) {
+      toast('Hub already exists at this location', 'error')
+      return
+    }
+
     setSaving(true)
     try {
       await addCenterAction({
         name: form.name,
-        latitude: Number(form.latitude),
-        longitude: Number(form.longitude),
+        latitude: lat,
+        longitude: lng,
       })
       onClose?.()
       setForm({ name: '', address: '', latitude: '', longitude: '' })

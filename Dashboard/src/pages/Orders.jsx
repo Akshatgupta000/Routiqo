@@ -9,8 +9,9 @@ import { useApp } from '../context/AppContext'
 import * as api from '../services/api'
 import AddCenterModal from '../components/Forms/AddCenterModal'
 import AddVehicleModal from '../components/Forms/AddVehicleModal'
-import { formatId } from '../utils/format'
+import { formatId, getLocalDateString } from '../utils/format'
 import Modal from '../components/UI/Modal'
+import { PRIORITIES } from '../utils/constants'
 
 import CleanupOrders from '../components/Orders/CleanupOrders'
 
@@ -18,6 +19,7 @@ export default function Orders() {
   const { 
     centers, 
     orders, 
+    setOrders,
     vehicles, 
     refreshOrders, 
     refreshRoutes, 
@@ -66,7 +68,35 @@ export default function Orders() {
     {
       key: 'priority',
       label: 'Priority',
-      render: (r) => <Badge status={r.priority}>{r.priority}</Badge>,
+      render: (r) => {
+        const togglePriority = async () => {
+          const newPriority = r.priority === 'priority' ? 'normal' : 'priority'
+          
+          // Optimistic update
+          setOrders(prev => prev.map(o => String(o.id) === String(r.id) ? { ...o, priority: newPriority } : o))
+          
+          try {
+            await api.updateOrder(r.id, { priority: newPriority })
+            toast(`Priority set to ${newPriority}`)
+            // We don't necessarily need refreshOrders() here because we updated state locally,
+            // but it's safe to keep it for long-term consistency if desired.
+          } catch (err) {
+            // Rollback on error
+            setOrders(prev => prev.map(o => String(o.id) === String(r.id) ? { ...o, priority: r.priority } : o))
+            toast('Failed to update priority', 'error')
+          }
+        }
+
+        return (
+          <div 
+            onClick={togglePriority}
+            className="relative inline-block transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer hover:shadow-md hover:shadow-primary/10 rounded-full"
+            title={`Click to toggle: ${r.priority === 'priority' ? 'Normal' : 'High Priority'}`}
+          >
+            <Badge status={r.priority}>{r.priority}</Badge>
+          </div>
+        )
+      },
     },
     {
       key: 'status',
@@ -276,9 +306,11 @@ export default function Orders() {
           </h1>
           <p className="text-sm font-medium text-zinc-500">Create and track delivery requests.</p>
         </div>
-        <Button onClick={() => setModal(true)} className="w-full sm:w-auto shadow-lg">
-          Add new order
-        </Button>
+        {selectedDate >= getLocalDateString() && (
+          <Button onClick={() => setModal(true)} className="w-full sm:w-auto shadow-lg">
+            Add new order
+          </Button>
+        )}
       </div>
 
       <Card className="mb-6 p-4 lg:p-6 bg-white/50 backdrop-blur-sm dark:bg-zinc-900/50 border-zinc-200/60 dark:border-zinc-800/60">
