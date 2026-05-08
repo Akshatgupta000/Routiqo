@@ -1,7 +1,5 @@
 const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
-console.log('[Auth] API_URL initialized as:', API_URL);
-
 const authService = {
   login: async (email, password) => {
     try {
@@ -17,7 +15,9 @@ const authService = {
       }
       return response.json();
     } catch (err) {
-      console.error('[Auth] Login error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[Auth] Login error:', err);
+      }
       throw err;
     }
   },
@@ -36,7 +36,9 @@ const authService = {
       }
       return response.json();
     } catch (err) {
-      console.error('[Auth] Registration error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[Auth] Registration error:', err);
+      }
       throw err;
     }
   },

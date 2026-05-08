@@ -45,7 +45,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'signup' }) => {
 
       // Redirect to dashboard with token in URL (cross-origin fix for dev)
       const userData = encodeURIComponent(JSON.stringify(data.data.user));
-      const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || 'http://localhost:5174';
+      const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
       window.location.href = `${dashboardUrl}?token=${data.data.access_token}&user=${userData}`;
     } catch (error) {
       console.error('Auth error:', error);

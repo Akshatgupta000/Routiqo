@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y \
     unzip \
     curl \
     libzip-dev \
-    zip
+    zip \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev
 
 # Install MongoDB extension
 RUN pecl install mongodb && docker-php-ext-enable mongodb
@@ -24,7 +27,10 @@ RUN composer install --no-dev --optimize-autoloader
 
 # Laravel optimizations
 RUN php artisan optimize:clear || true
+RUN php artisan config:cache || true
+RUN php artisan route:cache || true
 
 EXPOSE 10000
 
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+# Use a shell script or direct command to bind to the port provided by the environment
+CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
