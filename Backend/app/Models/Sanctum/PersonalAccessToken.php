@@ -1,24 +1,16 @@
 <?php
-
 namespace App\Models\Sanctum;
 
 use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
-use MongoDB\Laravel\Eloquent\DocumentModel;
+use MongoDB\Laravel\Eloquent\HybridRelations;
 
 class PersonalAccessToken extends SanctumPersonalAccessToken
 {
-    use DocumentModel;
+    use HybridRelations;
 
     protected $connection = 'mongodb';
     protected $collection = 'personal_access_tokens';
-    protected $primaryKey = '_id';
-    protected $keyType = 'string';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'name',
         'token',
@@ -29,11 +21,6 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
         'tokenable_type'
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
     protected $casts = [
         'abilities' => 'json',
         'last_used_at' => 'datetime',
