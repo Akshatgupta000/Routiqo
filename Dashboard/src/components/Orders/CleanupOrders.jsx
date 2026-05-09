@@ -5,7 +5,7 @@ import Modal from '../UI/Modal'
 import Button from '../UI/Button'
 import { useApp } from '../../context/AppContext'
 
-export default function CleanupOrders({ onActionComplete, toast }) {
+export default function CleanupOrders({ onActionComplete, toast, onOpenChange }) {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [counts, setCounts] = useState({ completed: 0, pending: 0, total: 0 })
@@ -30,11 +30,12 @@ export default function CleanupOrders({ onActionComplete, toast }) {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false)
+        if (onOpenChange) onOpenChange(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [selectedDate])
+  }, [selectedDate, onOpenChange])
 
   const handleAction = async (type) => {
     setLoading(true)
@@ -67,11 +68,13 @@ export default function CleanupOrders({ onActionComplete, toast }) {
   }
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative z-[100] inline-block text-left" ref={dropdownRef}>
       <button
         onClick={() => {
-          setIsOpen(!isOpen)
-          if (!isOpen) fetchCounts()
+          const next = !isOpen
+          setIsOpen(next)
+          if (onOpenChange) onOpenChange(next)
+          if (next) fetchCounts()
         }}
         className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition-all hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
       >
@@ -81,44 +84,44 @@ export default function CleanupOrders({ onActionComplete, toast }) {
 
       {isOpen && (
         <div
-          className="absolute right-0 z-[60] mt-2 w-64 origin-top-right rounded-xl border-2 border-zinc-300 bg-white p-1 shadow-2xl dark:border-zinc-600 dark:bg-zinc-900"
+          className="absolute right-0 z-[110] mt-2 w-72 origin-top-right rounded-lg border border-zinc-800 bg-black p-1 shadow-2xl opacity-100"
         >
-          <div className="px-3 py-2 text-[10px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white border-b border-zinc-800 mb-1">
             Bulk Cleanup Operations
           </div>
           
           <button
             onClick={() => setConfirmModal('completed')}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
+            className="group flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-600"
           >
             <CheckCircle2 className="h-4 w-4" />
             <div className="flex flex-col items-start">
               <span>Delete Completed Orders</span>
-              <span className="text-[10px] font-medium opacity-80">Count: {counts.completed}</span>
+              <span className="text-[10px] font-bold text-white">Count: {counts.completed}</span>
             </div>
           </button>
 
           <button
             onClick={() => setConfirmModal('pending')}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-500/20"
+            className="group flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-600"
           >
             <Clock className="h-4 w-4" />
             <div className="flex flex-col items-start">
               <span>Delete Pending Orders</span>
-              <span className="text-[10px] font-medium opacity-80">Count: {counts.pending}</span>
+              <span className="text-[10px] font-bold text-white">Count: {counts.pending}</span>
             </div>
           </button>
 
-          <div className="my-1 border-t-2 border-zinc-100 dark:border-zinc-800" />
+          <div className="my-1 border-t border-zinc-800" />
 
           <button
             onClick={() => setConfirmModal('all')}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold text-red-700 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/20"
+            className="group flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-600"
           >
             <Trash2 className="h-4 w-4" />
             <div className="flex flex-col items-start">
               <span>Delete All Orders</span>
-              <span className="text-[10px] font-medium opacity-80">Total: {counts.total}</span>
+              <span className="text-[10px] font-bold text-white">Total: {counts.total}</span>
             </div>
           </button>
         </div>

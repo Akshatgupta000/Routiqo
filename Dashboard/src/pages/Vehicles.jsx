@@ -6,6 +6,7 @@ import AddVehicleModal from '../components/Forms/AddVehicleModal'
 import EditVehicleModal from '../components/Forms/EditVehicleModal'
 import * as api from '../services/api'
 import { useApp } from '../context/AppContext'
+import Modal from '../components/UI/Modal'
 
 export default function Vehicles() {
   const { 
@@ -21,6 +22,8 @@ export default function Vehicles() {
   } = useApp()
   const [modal, setModal] = useState(false)
   const [editVehicle, setEditVehicle] = useState(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const columns = [
     {
@@ -81,17 +84,7 @@ export default function Vehicles() {
             Edit
           </button>
           <button
-            onClick={async () => {
-              try {
-                await api.deleteVehicle(r.id)
-                toast('Vehicle deleted. Synchronizing map...')
-                resetSelection()
-                await refreshVehicles()
-                await generateRoutesAction()
-              } catch (err) {
-                toast('Failed to delete vehicle.', 'error')
-              }
-            }}
+            onClick={() => setDeleteConfirmId(r.id)}
             className="flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition-colors dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60"
             title="Delete vehicle"
           >
@@ -142,6 +135,49 @@ export default function Vehicles() {
         toast={toast}
         onUpdated={refreshVehicles}
       />
+
+      <Modal
+        open={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        title="Delete Vehicle?"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
+            <Button 
+              variant="danger" 
+              disabled={isDeleting}
+              onClick={async () => {
+                setIsDeleting(true)
+                try {
+                  await api.deleteVehicle(deleteConfirmId)
+                  toast('Vehicle deleted. Synchronizing map...')
+                  resetSelection()
+                  await refreshVehicles()
+                  await generateRoutesAction()
+                  setDeleteConfirmId(null)
+                } catch (err) {
+                  toast('Failed to delete vehicle.', 'error')
+                } finally {
+                  setIsDeleting(false)
+                }
+              }}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Vehicle'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Are you sure you want to delete this vehicle? This action will:
+          </p>
+          <ul className="list-disc pl-5 text-xs space-y-1 text-zinc-500 dark:text-zinc-400">
+            <li>Permanently remove the vehicle from your fleet</li>
+            <li>Reset current map selections</li>
+            <li>Automatically regenerate delivery routes for the affected area</li>
+          </ul>
+        </div>
+      </Modal>
     </div>
   )
 }

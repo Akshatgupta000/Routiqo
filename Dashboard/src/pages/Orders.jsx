@@ -40,6 +40,7 @@ export default function Orders() {
   // Suggestion states
   const [centerSuggestion, setCenterSuggestion] = useState(null)
   const [vehicleSuggestion, setVehicleSuggestion] = useState(null)
+  const [isCleanupOpen, setIsCleanupOpen] = useState(false)
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -385,6 +386,7 @@ export default function Orders() {
             </button>
             <div className="w-full sm:w-auto">
               <CleanupOrders 
+                onOpenChange={setIsCleanupOpen}
                 onActionComplete={() => {
                   refreshOrders()
                   refreshRoutes()
@@ -396,11 +398,13 @@ export default function Orders() {
         </div>
       </Card>
 
-      {pageLoading ? (
-        <Skeleton className="h-64 w-full" />
-      ) : (
-        <Table columns={columns} rows={filteredOrders} empty="No orders match the selected filters." />
-      )}
+      <div className={`transition-all duration-300 ${isCleanupOpen ? 'pointer-events-none opacity-40 blur-[2px] grayscale-[0.5]' : ''}`}>
+        {pageLoading ? (
+          <Skeleton className="h-64 w-full" />
+        ) : (
+          <Table columns={columns} rows={filteredOrders} empty="No orders match the selected filters." />
+        )}
+      </div>
 
       <AddOrderModal
         open={modal}
