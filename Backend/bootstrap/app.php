@@ -31,10 +31,20 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
             if ($request->is('api/*')) {
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $e->getMessage(),
+                        'errors' => $e->errors(),
+                    ], 422);
+                }
+
                 $statusCode = method_exists($e, 'getStatusCode')
                     ? $e->getStatusCode()
-                    : 500;
+                    : (property_exists($e, 'status') ? $e->status : 500);
 
+                // If it's a 500 and we have a message, it might be better to show it in dev but hide in prod
+                // For now, we'll keep it simple
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage() ?: 'An unexpected error occurred',

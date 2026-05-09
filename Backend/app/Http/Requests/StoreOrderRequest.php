@@ -19,6 +19,8 @@ class StoreOrderRequest extends FormRequest
             'address' => ['required', 'string', 'max:500'],
             'delivery_date' => ['required', 'date'],
             'priority' => ['sometimes', new Enum(OrderPriority::class)],
+            'latitude' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
         ];
     }
 }

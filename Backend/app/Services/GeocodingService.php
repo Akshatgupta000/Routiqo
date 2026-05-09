@@ -22,22 +22,32 @@ class GeocodingService
 
         try {
             $response = Http::withHeaders([
-                'User-Agent' => 'LogiRoute-AI-Laravel-Backend',
-            ])->get('https://nominatim.openstreetmap.org/search', [
+                'User-Agent' => config('app.name', 'Routiqo') . ' (https://routiqo.onrender.com)',
+            ])
+            ->timeout(10)
+            ->get('https://nominatim.openstreetmap.org/search', [
                 'q' => $query,
                 'format' => 'json',
                 'limit' => 1,
             ]);
 
+            if ($response->status() === 429 || $response->status() === 403) {
+                Log::error('geocoding.blocked', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+                throw new \Exception('Geocoding service rate limited or blocked. Please try again later or use coordinates.');
+            }
+
             if ($response->failed()) {
-                throw new \Exception('Nominatim Geocoding service unavailable');
+                throw new \Exception('Nominatim Geocoding service unavailable (Status: ' . $response->status() . ')');
             }
 
             $data = $response->json();
 
-            if (empty($data)) {
+            if (!is_array($data) || empty($data)) {
                 throw ValidationException::withMessages([
-                    'address' => __('The provided address could not be located.'),
+                    'address' => __('The provided address could not be located. Please try a more specific address or city name.'),
                 ]);
             }
 
@@ -51,7 +61,8 @@ class GeocodingService
         } catch (\Exception $e) {
             Log::error('geocoding.error', [
                 'query' => $query,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'type' => get_class($e)
             ]);
 
             if ($e instanceof ValidationException) {
@@ -59,7 +70,7 @@ class GeocodingService
             }
 
             throw ValidationException::withMessages([
-                'address' => __('Geocoding failed. Please enter coordinates manually.'),
+                'address' => __('Geocoding failed: ' . $e->getMessage()),
             ]);
         }
     }

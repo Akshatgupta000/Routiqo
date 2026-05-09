@@ -21,10 +21,12 @@ class OrderService
 
     public function createOrder(array $data): Order
     {
-        // Geocode address to lat/lng internally (user never supplies coordinates)
-        $geo = $this->geocodingService->geocode($data['address']);
-        $data['latitude'] = $geo['lat'];
-        $data['longitude'] = $geo['lng'];
+        // Geocode address to lat/lng internally if not already provided by frontend
+        if (!isset($data['latitude']) || !isset($data['longitude'])) {
+            $geo = $this->geocodingService->geocode($data['address']);
+            $data['latitude'] = $geo['lat'];
+            $data['longitude'] = $geo['lng'];
+        }
 
         $center = $this->resolveNearestCenter((float) $data['latitude'], (float) $data['longitude']);
         

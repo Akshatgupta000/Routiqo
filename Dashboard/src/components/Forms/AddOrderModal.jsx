@@ -20,6 +20,8 @@ export default function AddOrderModal({ open, onClose, toast }) {
   
   const [form, setForm] = useState({
     address: '',
+    latitude: null,
+    longitude: null,
     delivery_date: selectedDate || today,
     priority: 'normal',
   })
@@ -51,11 +53,13 @@ export default function AddOrderModal({ open, onClose, toast }) {
     try {
       await addOrderAction({
         address: form.address,
+        latitude: form.latitude,
+        longitude: form.longitude,
         delivery_date: form.delivery_date,
         priority: form.priority,
       })
       onClose?.()
-      setForm({ address: '', delivery_date: today, priority: 'normal' })
+      setForm({ address: '', latitude: null, longitude: null, delivery_date: today, priority: 'normal' })
       setShowCalendar(false)
     } catch (err) {
       // toast handled in action
@@ -92,6 +96,8 @@ export default function AddOrderModal({ open, onClose, toast }) {
               setForm((f) => ({
                 ...f,
                 address: place.address,
+                latitude: place.lat,
+                longitude: place.lng,
               }))
               toast('Address selected')
             }}
